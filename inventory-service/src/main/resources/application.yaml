@@ -41,3 +41,35 @@ spring:
       max-attempts: 3
       backoff:
         interval: 2000 # 2 seconds, mentioned in milliseconds
+
+# Eureka Configuration
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    hostname: localhost
+    non-secure-port: 8082
+  service-url:
+    defaultZone: http://localhost:8761/eureka/
+
+# Actuator configuration for health checks, metrics, etc. and to expose endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    disk-space:
+      enabled: true
+    redis:
+      enabled: false
+    kafka:
+      enabled: true
