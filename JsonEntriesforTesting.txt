@@ -1,0 +1,30 @@
+JsonEntriesforTesting in Normal scenario
+{
+  "productName": "tables",
+  "quantity": 20,
+  "price": 2,
+  "status":"created"
+}
+
+url: localhost:8081/orders
+
+JsonEntriesforTesting in Retry and DLQ scenario
+{
+  "productName": "fail-test",
+  "price": 100.0,
+  "quantity": 1,
+  "status":"created"
+}
+
+Note: create below topics in Kafka before running the test
+inventory-topic
+orders
+orders-dlt
+
+Make sure to run the Kafka server and create the topics using the commands from
+kafka topics creation document
+
+Command to start/stop kafka server
+
+docker-compose up -d to start the server
+docker-compose down to stop the server

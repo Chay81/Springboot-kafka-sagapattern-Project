@@ -7,6 +7,8 @@ spring:
     username: LocalUser
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+        name: order-service
 
   jpa:
     hibernate:
@@ -15,8 +17,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+#    defer-datasource-initialization: true
 
   kafka:
+    admin:
+      auto-create: true
     bootstrap-servers: host.docker.internal:9092
     producer:
       properties:

@@ -3,6 +3,7 @@ package com.inventory.service;
 import com.inventory.entity.Inventory;
 import com.inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -11,12 +12,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class InventoryService {
 
-    private final InventoryRepository inventoryRepository;
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
     public void updateStock(String productName, int quantity) {
         Inventory inventory = inventoryRepository.findByProductName(productName)
                 .orElse(Inventory.builder().productName(productName).stock(0).build());
-        inventory.setStock(inventory.getStock() - quantity);
+        inventory.setStock(quantity - inventory.getStock());
         inventoryRepository.save(inventory);
     }
 

@@ -7,6 +7,8 @@ spring:
     username: LocalUser
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+    name: inventory-service
 
   jpa:
     hibernate:
@@ -15,6 +17,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+#    defer-datasource-initialization: true
 
   kafka:
     bootstrap-servers: host.docker.internal:9092
@@ -32,3 +36,8 @@ spring:
         concurrency: 1
       template:
         default-topic: orders
+    # Retry and DLQ settings
+    retry:
+      max-attempts: 3
+      backoff:
+        interval: 2000 # 2 seconds, mentioned in milliseconds
