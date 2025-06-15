@@ -1,0 +1,39 @@
+kafka is the container name
+
+run topic
+----------
+
+docker exec -it kafka kafka-topics --create --topic orders.DLT --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1
+
+
+verify topic exists
+-------------------
+
+docker exec -it kafka /bin/bash
+
+/usr/bin/kafka-topics --list --bootstrap-server localhost:9092
+
+output
+--------
+
+orders
+orders.DLT
+
+order-retry
+------------
+
+docker exec -it kafka kafka-topics --create --topic orders.retry --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+
+
+fail-case
+---------
+
+kafka-console-producer --broker-list localhost:9092 --topic orders
+> {"orderId":123,"product":"FAIL-CASE"}
+
+
+delete topic
+-------------
+
+docker exec -it kafka kafka-topics --bootstrap-server localhost:9092 --delete --topic orders.DLT1
+
