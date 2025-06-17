@@ -97,8 +97,6 @@ logging:
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
     org.springframework.cloud.loadbalancer: DEBUG
-  pattern:
-    console: "{ \"timestamp\": \"%d{yyyy-MM-dd HH:mm:ss.SSS}\", \"level\": \"%p\", \"thread\": \"%t\", \"logger\": \"%c\", \"message\": \"%m\" }"
 
   #     configuration for Prometheus
   metrics:
