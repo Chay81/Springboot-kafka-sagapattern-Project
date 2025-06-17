@@ -16,9 +16,9 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    @GetMapping("/{product}")
-    public ResponseEntity<Inventory> getStock(@PathVariable String product) {
-        return inventoryService.getStock(product)
+    @GetMapping("/{productName}")
+    public ResponseEntity<Inventory> getStock(@PathVariable String productName) {
+        return inventoryService.getStock(productName)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

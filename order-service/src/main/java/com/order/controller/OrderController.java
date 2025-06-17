@@ -16,29 +16,40 @@ import com.order.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Objects;
+
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
-	@Autowired
-	private OrderService orderService;
+    @Autowired
+    private OrderService orderService;
 
-	@PostMapping
-	public ResponseEntity<OrderResponse> createOrder(@RequestBody Order order) {
-		Order created = orderService.placeOrder(order);
-		OrderResponse response = new OrderResponse("Order placed and sent to Kafka!", created);
-		return ResponseEntity.status(HttpStatus.CREATED).body(response);
-	}
+    @PostMapping
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody Order order) {
+        Order created = orderService.placeOrder(order);
+        OrderResponse response = new OrderResponse("Order placed and sent to Kafka!", created);
+        OrderResponse DLQResponse = new OrderResponse("Order failed to process in Inventory-Service," +
+				" after 2 retries, sent to dead letter topic", created);
 
-	@GetMapping("/{id}")
-	public ResponseEntity<Order> getOrder(@PathVariable Long orderId) {
+        // Check if the order was successfully created, if not, return the DLQ response
+        if ("fail-test".equalsIgnoreCase(order.getProductName())) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(DLQResponse);
+        } else {
+            // If the order was successfully created, return the normal response
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+    }
 
-		if (orderService.getByOrderId(orderId) != null) {
-			return ResponseEntity.ok(orderService.getByOrderId(orderId));
-		} else {
-			// If the order is not found, return a 404 Not Found response
-			return ResponseEntity.notFound().build();
-		}
-	}
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Order> getOrder(@PathVariable Long orderId) {
+
+        if (orderService.getByOrderId(orderId) != null) {
+            return ResponseEntity.ok(orderService.getByOrderId(orderId));
+        } else {
+            // If the order is not found, return a 404 Not Found response
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
