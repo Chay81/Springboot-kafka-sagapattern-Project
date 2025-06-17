@@ -88,8 +88,9 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.loadbalancer: DEBUG
-  pattern:
-        console: "{ \"timestamp\": \"%d{yyyy-MM-dd HH:mm:ss.SSS}\", \"level\": \"%p\", \"thread\": \"%t\", \"logger\": \"%c\", \"message\": \"%m\" }"
+#  this configuration is for JSON format logging in the console
+#  pattern:
+#        console: "{ \"timestamp\": \"%d{yyyy-MM-dd HH:mm:ss.SSS}\", \"level\": \"%p\", \"thread\": \"%t\", \"logger\": \"%c\", \"message\": \"%m\" }"
 
 
   #     configuration for Prometheus

@@ -24,6 +24,15 @@ Note: 1. ensure to add dependency of Prometheus, add configuration of both(Prome
 5. update Prometheus.yml for all microservices which are to be monitored
 6. if you have updated Prometheus.yml then use this command to restart, docker restart prometheus
 7. we can this command in docker to get the logs of prometheus.......docker logs -f prometheus
+Note: by default prometheus runs on port 9090, we have changed it to 9091, as port 9090 was used by another application
+
+command to check if port number is used by another app in windows
+1. netstat -aon | findstr :9090
+output:
+TCP    0.0.0.0:9090           0.0.0.0:0              LISTENING       12345
+
+2. Find the PID (last column), e.g., 12345, then check the process:
+tasklist /FI "PID eq 12345"
 
 
 Grafana
@@ -89,18 +98,17 @@ Explore Prometheus Web UI
 -------------------------
 localhost:9091
 
-Use the “Graph” tab
+-> Start typing metric names like: http_, jvm_, process_, kafka_, etc.
 
-Start typing metric names like:
+-> Prometheus autocompletes and shows valid metrics.
 
-http_, jvm_, process_, kafka_, etc.
-
-Prometheus autocompletes and shows valid metrics.
-
-You can experiment like: type like below
+-> You can experiment like: type like below
 
 rate(http_server_requests_seconds_count[1m])
 sum(jvm_memory_used_bytes) by (area)
+
+-> once the results are displayed, Use the 'Graph', 'Table' and 'Explain' tabs below the query search
+-> Use these options and others options like time selection to see the desired ouput
 
 PromLens (PromQL Helper)
 --------------------------
@@ -140,10 +148,20 @@ How to Find the Dashboard ID
 ------------------------------
 Visit: https://grafana.com/grafana/dashboards
 
-Search for a technology or tool
-Example: Type Kafka, Spring Boot, JVM, MySQL etc.
-
-Click on any dashboard name to open its details page.
+scroll down to see an option in the type bar for search dashboards
+-> type springboot
+-> it will display few dashboards
+-> select any of them by clicking the dashboard
+-> on the mid right side we can see an option 'Copy ID to clipboard'
+-> id will be copied
+-> go to Grafana page
+-> on the top left we have menubar
+-> select dashboard
+-> on the top right side we have tab 'New', select 'import' from the dropdown box
+-> paste the ID in the import dashboard and hit Load
+-> select the database as Prometheus and hit on load again
+-> now we can see the statistics
+-> on the top we have an option selecting the application, instances etc to see the statistics.
 
 Look at the URL in your browser’s address bar.
 
