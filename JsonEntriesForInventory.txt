@@ -1,0 +1,91 @@
+1. Get Request to fetch stock by product name
+---------------------------------------------
+
+Example: if the product name is "laptop" as shown below
+then endpoint will be localhost:8082/inventory/product/laptop
+if spring gateway is used
+then the endpoint will be localhost:8765/inventory/product/laptop
+
+Note: this endpoint will provide a list of inventory available for laptop, and not a single element.
+
+Response:
+--------
+
+{
+    "inventoryId": 12,
+    "price": 20000.0,
+    "productName": "laptop",
+    "brandName": "Lenovo",
+    "modelNumber": "14B",
+    "stock": 70
+}
+
+
+2. Get Request to fetch stock by brandName and modelNumber
+----------------------------------------------------------
+
+Example: if the brandName is "lenovo" and modelNumber is "14B" as shown below
+then endpoint will be localhost:8082/inventory/lenovo/14B
+if spring gateway is used
+then the endpoint will be localhost:8765/inventory/lenovo/14B
+
+Response:
+---------
+
+{
+    "inventoryId": 12,
+    "price": 20000.0,
+    "productName": "laptop",
+    "brandName": "Lenovo",
+    "modelNumber": "14B",
+    "stock": 70
+}
+
+
+3. Post Request to create stock
+-------------------------------
+
+Example: the endpoint will be localhost:8082/inventory
+if spring gateway is used
+then the endpoint will be localhost:8082/inventory
+
+Json used for example
+---------------------
+
+{
+  "productName": "laptop",
+  "price": 20000,
+  "stock": 70,
+  "brandName":"Lenovo",
+  "modelNumber":"14A"
+}
+
+
+Response: If product is available, then stock will be updated or if product is not available then a new product will be created.
+---------
+
+{
+    "message": "Inventory already exists, stock updated",
+    "inventory": {
+        "inventoryId": 14,
+        "price": 20000.0,
+        "productName": "laptop",
+        "brandName": "Lenovo",
+        "modelNumber": "14C",
+        "stock": 140
+    }
+}
+
+
+
+
+
+Make sure to run the Kafka server and create the topics using the commands from
+kafka topics creation document.txt
+
+Command to start/stop kafka server
+----------------------------------
+
+docker-compose up -d to start the server
+docker-compose down to stop the server
+

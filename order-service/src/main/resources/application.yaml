@@ -40,6 +40,21 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     template:
       default-topic: orders
+    retry:
+      max-attempts: 3
+      backoff:
+        interval: 2000 # 2 seconds, mentioned in milliseconds
+    consumer:
+      group-id: order-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        allow-auto-create-topics: true
+      max-attempts: 3
+      backoff:
+        interval: 2000 # 2 seconds, mentioned in milliseconds
 
 # Eureka Configuration
 eureka:
@@ -88,6 +103,8 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.loadbalancer: DEBUG
+    root: INFO
+    com.order: DEBUG
 #  this configuration is for JSON format logging in the console
 #  pattern:
 #        console: "{ \"timestamp\": \"%d{yyyy-MM-dd HH:mm:ss.SSS}\", \"level\": \"%p\", \"thread\": \"%t\", \"logger\": \"%c\", \"message\": \"%m\" }"

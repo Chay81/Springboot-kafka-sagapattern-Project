@@ -18,6 +18,9 @@ public class Inventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long inventoryId;
 
+    private double price;
     private String productName;
+    private String brandName;
+    private String modelNumber;
     private int stock;
 }

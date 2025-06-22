@@ -1,4 +1,4 @@
-package com.inventory.DTO;
+package com.inventory.DAO;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -20,5 +20,9 @@ public class Order {
     private String productName;
     private int quantity;
     private double price;
-    private String status;
+    private String brandName;
+    private String modelNumber;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
 }

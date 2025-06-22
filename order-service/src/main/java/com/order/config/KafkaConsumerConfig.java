@@ -1,6 +1,6 @@
-package com.inventory.config;
+package com.order.config;
 
-import com.inventory.DAO.Order;
+import com.order.entity.Order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -25,9 +25,24 @@ import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
-@Slf4j
 @EnableKafka
+@Slf4j
 public class KafkaConsumerConfig {
+
+    /* This class is needed to listen messages when the message has failed to send messages and update order-service
+    * This is implemented due to Saga pattern, when the order is placed, it sends a message to inventory-service but if the
+    * inventory-service fails to process the message, the order-service needs to be updated
+    * with the status of the order as failed. This is done by listening to the messages
+    * sent by the inventory-service to the order-service.
+    * The inventory-service will send a message to the order-service with the status of the order
+    * as either success or failure. If the inventory-service fails to process the message, it will send a message to the
+    * order-service with the status of the order as failed.
+    * The order-service will then update the status of the order as failed and send a message
+    * to the inventory-service to rollback the stock.
+    * This is done to ensure that the order-service and inventory-service are in sync and the
+    * order-service is updated with the status of the order.
+    * This is a simple implementation of the Saga pattern.
+    */
 
     @Bean
     public ConsumerFactory<String, Order> consumerFactory() {
@@ -37,54 +52,28 @@ public class KafkaConsumerConfig {
 
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, "inventory-group");
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "order-group");
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, deserializer);
         config.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, deserializer);
 
         return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Order> kafkaListenerContainerFactory(
-            ConsumerFactory<String, Order> consumerFactory,
-            DeadLetterPublishingRecoverer recoverer
+            ConsumerFactory<String, Order> consumerFactory
     ) {
         ConcurrentKafkaListenerContainerFactory<String, Order> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
+
         factory.setConsumerFactory(consumerFactory);
 
-        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2));
-        errorHandler.setRetryListeners((record, ex, attempt) -> {
-            System.out.println("🔁 Retry #" + attempt + ": " + record.value());
-        });
+        // Optional: Add retry logic like inventory-service if needed
+        factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0L, 0)));
 
-        factory.setCommonErrorHandler(errorHandler);
         return factory;
-    }
-
-    @Bean
-    public DeadLetterPublishingRecoverer recoverer(KafkaTemplate<String, Order> kafkaTemplate) {
-        return new DeadLetterPublishingRecoverer(kafkaTemplate, (record, ex) -> {
-            System.out.println("➡️ Sending to DLQ due to: " + ex.getMessage());
-            return new TopicPartition("inventory-topic-dlt", record.partition());
-
-        });
-    }
-
-    @Bean
-    public ProducerFactory<String, Order> producerFactory() {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        return new DefaultKafkaProducerFactory<>(configProps);
-    }
-
-    @Bean
-    public KafkaTemplate<String, Order> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
     }
 }

@@ -1,5 +1,6 @@
 package com.order.controller;
 
+import com.order.entity.OrderStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ import com.order.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.Objects;
+import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
@@ -27,10 +28,19 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(@RequestBody Order order) {
+    public ResponseEntity<OrderResponse> placeOrder(@RequestBody Order order) {
+
+        boolean available = orderService.checkStockAvailability(order);
+
+        if (!available) {
+            order.setStatus(OrderStatus.ORDER_FAILED);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new OrderResponse("❌ Product is out of stock", order));
+        }
+
         Order created = orderService.placeOrder(order);
-        OrderResponse response = new OrderResponse("Order placed and sent to Kafka!", created);
-        OrderResponse DLQResponse = new OrderResponse("Order failed to process in Inventory-Service," +
+        OrderResponse response = new OrderResponse("Order placed and sent to Inventory Service!", created);
+        OrderResponse DLQResponse = new OrderResponse("Order failed to process in Inventory Service," +
 				" after 2 retries, sent to dead letter topic", created);
 
         // Check if the order was successfully created, if not, return the DLQ response
@@ -44,12 +54,14 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     public ResponseEntity<Order> getOrder(@PathVariable Long orderId) {
-
-        if (orderService.getByOrderId(orderId) != null) {
-            return ResponseEntity.ok(orderService.getByOrderId(orderId));
-        } else {
-            // If the order is not found, return a 404 Not Found response
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(orderService.getByOrderId(orderId));
     }
+
+    @GetMapping("/product/{productName}")
+    public ResponseEntity <List<Order>> getProductOrders(@PathVariable String productName) {
+        return ResponseEntity.ok(orderService.getStockOrders(productName));
+    }
+
+
+
 }

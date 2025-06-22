@@ -28,6 +28,8 @@ spring:
         format_sql: true
 
   kafka:
+    admin:
+      auto-create: true
     bootstrap-servers: host.docker.internal:9092
     consumer:
       group-id: inventory-group
@@ -37,6 +39,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: '*'
+        allow-auto-create-topics: true
       listener:
         ack-mode: record
         missing-topics-fatal: false

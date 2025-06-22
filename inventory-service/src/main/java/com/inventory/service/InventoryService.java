@@ -1,28 +1,17 @@
 package com.inventory.service;
 
 import com.inventory.entity.Inventory;
-import com.inventory.repository.InventoryRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
-@Service
-@RequiredArgsConstructor
-public class InventoryService {
+public interface InventoryService {
 
-    @Autowired
-    private InventoryRepository inventoryRepository;
+    public boolean updateStock(String productName, int quantity, double price, String brandName, String modelNumber);
 
-    public void updateStock(String productName, int quantity) {
-        Inventory inventory = inventoryRepository.findByProductName(productName)
-                .orElse(Inventory.builder().productName(productName).stock(0).build());
-        inventory.setStock(quantity - inventory.getStock());
-        inventoryRepository.save(inventory);
-    }
+    Optional<Inventory> getStock(String brandName, String modelNumber);
 
-    public Optional<Inventory> getStock(String productName) {
-        return inventoryRepository.findByProductName(productName);
-    }
+    List<Inventory> getProducts(String productName);
+
+    Inventory createStock(Inventory inventory);
 }
