@@ -1,13 +1,14 @@
 package com.order.repository;
 
-import java.util.Optional;
-
+import com.order.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.order.entity.Order;
+import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 	
 	Optional<Order> findByOrderId(Long orderId);
 
+    List<Order> findByProductName(String productName);
 }
