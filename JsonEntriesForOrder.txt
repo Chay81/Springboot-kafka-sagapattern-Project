@@ -35,15 +35,15 @@ Response in postman:
 ----------------------------------------------
 
 Example: if the order id is 34 as shown above
-then endpoint will be localhost:8081/orders/27
+then endpoint will be localhost:8081/orders/34
 if spring gateway is used
-then the endpoint will be localhost:8765/orders/27
+then the endpoint will be localhost:8765/orders/34
 
 Response:
 --------
 
 {
-    "orderId": 27,
+    "orderId": 34,
     "productName": "laptop",
     "quantity": 10,
     "price": 20000.0,
@@ -66,7 +66,7 @@ Response:
 
 [
     {
-        "orderId": 27,
+        "orderId": 34,
         "productName": "laptop",
         "quantity": 10,
         "price": 20000.0,
