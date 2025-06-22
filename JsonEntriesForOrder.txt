@@ -1,0 +1,124 @@
+1. JsonEntries in Normal scenario
+-------------------------------
+
+POST Request to create an order
+endpoint: localhost:8081/orders
+if spring gateway is used
+then the endpoint will be localhost:8765/orders
+
+Note: when the order is placed, the stock gets deducted from inventory DB.
+
+{
+  "productName": "laptop",
+  "quantity": 30,
+  "price": 20000,
+  "brandName":"Lenovo",
+  "modelNumber":"14B"
+}
+
+Response in postman:
+
+{
+    "message": "Order placed and sent to Inventory Service!",
+    "order": {
+        "orderId": 35,
+        "productName": "laptop",
+        "quantity": 30,
+        "price": 20000.0,
+        "brandName": "Lenovo",
+        "modelNumber": "14B",
+        "status": "ORDER_PLACED"
+    }
+}
+
+2. Get Request to fetch all order by productId
+----------------------------------------------
+
+Example: if the order id is 34 as shown above
+then endpoint will be localhost:8081/orders/34
+if spring gateway is used
+then the endpoint will be localhost:8765/orders/34
+
+Response:
+--------
+
+{
+    "orderId": 34,
+    "productName": "laptop",
+    "quantity": 10,
+    "price": 20000.0,
+    "brandName": "Lenovo",
+    "modelNumber": "14B",
+    "status": "ORDER_PLACED"
+}
+
+
+3. 2. Get Request to fetch all order by productName
+---------------------------------------------------
+
+Example: if the productName is laptop as shown below
+then endpoint will be localhost:8081/orders/product/laptop
+if spring gateway is used
+then the endpoint will be localhost:8765/orders/product/laptop
+
+Response:
+--------
+
+[
+    {
+        "orderId": 34,
+        "productName": "laptop",
+        "quantity": 10,
+        "price": 20000.0,
+        "brandName": "Lenovo",
+        "modelNumber": "14B",
+        "status": "ORDER_PLACED"
+    },
+    
+]
+
+
+4. Post Request to create an order for Retry and DLQ scenario
+-------------------------------------------------------------
+Important Note: if running the endpoint without Spring Gateway, then the endpoint will be localhost:8081/orders, if
+    using Spring Gateway, then the endpoint will be localhost:8765/orders
+
+JsonEntries in Retry and DLQ scenario
+{
+  "productName": "fail-test",
+  "price": 100.0,
+  "brandName":"Lenovo",
+  "modelNumber":"14Q",
+  "quantity": 1,
+  "status":"created"
+}
+
+if post request is made with the above JSON, it will fail and retry 2 times and then send the message to the dead letter topic (orders-dlt).
+// The order will not be created in the inventory topic and the response will be as follows:
+{
+    "message": "Order failed to process in Inventory-Service, after 2 retries, sent to dead letter topic",
+    "order": {
+        "orderId": 8,
+        "productName": "fail-test",
+        "quantity": 1,
+        "price": 100.0,
+        "brandName": "Lenovo",
+        "modelNumber": "14Q",
+        "status": "Placed"
+    }
+}
+
+Note: create below topics in Kafka before running the test
+----------------------------------------------------------
+inventory-topic
+orders
+orders-dlt
+
+Make sure to run the Kafka server and create the topics using the commands from
+kafka topics creation document.txt
+
+Command to start/stop kafka server
+----------------------------------
+
+docker-compose up -d to start the server
+docker-compose down to stop the server

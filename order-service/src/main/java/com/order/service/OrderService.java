@@ -1,5 +1,6 @@
 package com.order.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -10,51 +11,13 @@ import org.springframework.stereotype.Service;
 import com.order.entity.Order;
 import com.order.repository.OrderRepository;
 
-@Service
-@Slf4j
-public class OrderService {
+public interface OrderService {
 
-	private static final String TOPIC = "orders";
+	public Order placeOrder(Order order);
 
-	@Autowired
-	private KafkaTemplate<String, Order> kafkaTemplate;
+	public Order getByOrderId(Long orderId);
 
-	@Autowired
-	private OrderRepository orderRepository;
+	List<Order> getStockOrders(String productName);
 
-	public Order placeOrder(Order order) {
-
-		try {
-			log.info("Placing order: {}", order);
-			Order savedOrder = orderRepository.save(order);
-			log.info("Order saved: {}", savedOrder);
-
-			kafkaTemplate.send(TOPIC, order);
-
-			// Prepare the event to be sent to InventoryService
-			Order orderEvent = new Order();
-			orderEvent.setOrderId(savedOrder.getOrderId());
-			orderEvent.setProductName(savedOrder.getProductName());
-			orderEvent.setQuantity(savedOrder.getQuantity());
-			orderEvent.setStatus("ORDER_CREATED");
-
-			// ✅ Send to Kafka topic
-			kafkaTemplate.send("inventory-topic", orderEvent);
-
-			return savedOrder;
-		}catch (Exception e) {
-			log.error("Error placing order: {}", e.getMessage());
-			throw new RuntimeException("Failed to place order", e);
-		}
-	}
-
-	public Order getByOrderId(Long orderId) {
-
-		Optional<Order> optionalOrder = orderRepository.findByOrderId(orderId);
-		if (optionalOrder.isPresent()) {
-			return optionalOrder.get();
-		} else {
-			throw new RuntimeException("Order not found");
-		}
-	}
+	boolean checkStockAvailability(Order order);
 }

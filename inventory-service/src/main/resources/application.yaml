@@ -10,6 +10,14 @@ spring:
   application:
     name: inventory-service
 
+# route configuration
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,9 +26,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
-#    defer-datasource-initialization: true
 
   kafka:
+    admin:
+      auto-create: true
     bootstrap-servers: host.docker.internal:9092
     consumer:
       group-id: inventory-group
@@ -30,6 +39,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: '*'
+        allow-auto-create-topics: true
       listener:
         ack-mode: record
         missing-topics-fatal: false
@@ -47,13 +57,12 @@ eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
-#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}:${server.port}}
     hostname: localhost
-    non-secure-port: 8082
-  service-url:
-    defaultZone: http://localhost:8761/eureka/
 
 # Actuator configuration for health checks, metrics, etc. and to expose endpoints
 management:
@@ -64,12 +73,65 @@ management:
   endpoint:
     health:
       show-details: always
-  health:
     db:
       enabled: true
     disk-space:
       enabled: true
-    redis:
-      enabled: false
     kafka:
       enabled: true
+    shutdown:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+# actuator for info behaviour
+info:
+    app:
+        name: ${spring.application.name}
+        version: 1.0.0
+        description: Inventory Service for managing order inventory
+
+
+# logging configuration
+logging:
+  level:
+    org.springframework.kafka: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+
+  #     configuration for Prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        tags:
+          enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus"
+  endpoint:
+    prometheus:
+      enabled: true
+  tags:
+    application: ${spring.application.name}
+    version: 1.0.0
+    description: Inventory Service for microservices
+
+  cloud:
+    gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+        - name: RequestLogging
+      httpclient:
+        wiretap: true
+
+
+
+
+

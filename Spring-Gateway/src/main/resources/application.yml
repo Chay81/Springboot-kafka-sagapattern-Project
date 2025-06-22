@@ -1,0 +1,121 @@
+server:
+  port: 8765
+
+spring:
+  application:
+    name: api-gateway
+
+# Spring Cloud Gateway configuration
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+# order-service and inventory-service are the names of the services registered in Eureka
+          routes:
+            - id: order-service
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/orders/**
+#          below configuration is needed if endpoint is to be run like localhost:8765/order-service/orders
+#              filters:
+#                - StripPrefix=1
+
+            - id: inventory-service
+              uri: lb://INVENTORY-SERVICE
+              predicates:
+                - Path=/inventory/**
+#             below configuration is needed if endpoint is to be run like localhost:8765/inventory-service/inventory
+#              filters:
+#                - StripPrefix=1
+
+# Eureka Configuration
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}:${server.port}}
+    hostname: localhost
+
+# Actuator configuration for health checks, metrics, etc. and to expose endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+# Actuator configuration.
+  info:
+    env:
+      enabled: true
+    kafka:
+      enabled: true
+    shutdown:
+      enabled: true
+
+# logging configuration
+logging:
+  level:
+    org.springframework.boot.actuate.endpoint.web.servlet: DEBUG
+    org.springframework.boot.actuate.endpoint: DEBUG
+    org.springframework.boot.actuate.endpoint.web: DEBUG
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG
+    org.springframework.cloud.gateway.filter.GatewayFilterChain: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.web: INFO
+
+
+# Actuator configuration for endpoint of /actuator/info.
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.0.0
+    description: Spring Cloud Gateway for microservices
+
+# configuration for prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        tags:
+          enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus"
+  endpoint:
+    prometheus:
+      enabled: true
+  tags:
+    application: ${spring.application.name}
+    version: 1.0.0
+    description: Spring Cloud Gateway for microservices
+
+  cloud:
+    gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+        - name: RequestLogging
+      httpclient:
+        wiretap: true
+
+
+

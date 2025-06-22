@@ -1,0 +1,171 @@
+Import a Dashboard in Grafana
+Go to Grafana → Dashboards → Import
+
+Use dashboard ID: 4701 (Spring Boot metrics with Prometheus)
+
+Set the Prometheus datasource
+
+Prometheus
+----------
+
+endpoint: localhost:9091
+
+setup done, using internal port as 9091 due to conflict but docker port for Prometheus is 9090
+name of the server for Prometheus is Prometheus
+
+so when running the endpoint it will be localhost:9091 but if Grafana it will be Prometheus/9090
+
+the actuator endpoint for Prometheus is localhost:8765/actuator/Prometheus
+
+Note: 1. ensure to add dependency of Prometheus, add configuration of both(Prometheus and Grafana) in docker-compose
+2. add configuration in application.yml for order-service, gateway, inventory-service or any other microservices needed.
+3. Make sure to see the dependencies is Prometheus dashboard, steps are -> open localhost:9091/targets -> we should see order, inventory-service and Gateway  and Status should show as UP.
+4. Add Prometheus dependency in any microservice which needs to be shown in Prometheus and queried in Grafana
+5. update Prometheus.yml for all microservices which are to be monitored
+6. if you have updated Prometheus.yml then use this command to restart, docker restart prometheus
+7. we can this command in docker to get the logs of prometheus.......docker logs -f prometheus
+Note: by default prometheus runs on port 9090, we have changed it to 9091, as port 9090 was used by another application
+
+command to check if port number is used by another app in windows
+1. netstat -aon | findstr :9090
+output:
+TCP    0.0.0.0:9090           0.0.0.0:0              LISTENING       12345
+
+2. Find the PID (last column), e.g., 12345, then check the process:
+tasklist /FI "PID eq 12345"
+
+
+Grafana
+---------
+
+endpoint is localhost:3000
+
+user and password is admin/admin
+
+go to dashboard -> Import dashboard - upload the json(for testing use file saved in the project)
+
+-> provide a name for it and then import
+
+next -> add visualization -> select datasource -> configure a new data cource
+-> select Prometheus -> provide name of the database -> provide connection url will be http://prometheus:9090
+-> Access: server
+-> save and test -> the result will says successfully queried the Prometheus API
+
+
+Using Prometheus and Grafana
+---------------------------
+
+Prometheus
+----------
+1. to use prometheus, below are the queries to be used in query tab
+
+Use PromQL queries like:
+
+Basic PromQL Examples:
+---------------------
+| **Query**                                      | **Description**                        |
+| ---------------------------------------------- | -------------------------------------- |
+| `up`                                           | Shows which targets are up/down        |
+| `http_server_requests_seconds_count`           | Total HTTP requests                    |
+| `rate(http_server_requests_seconds_count[1m])` | Request rate per second                |
+| `jvm_memory_used_bytes`                        | JVM memory in use                      |
+| `jvm_memory_max_bytes`                         | JVM memory max available               |
+| `process_cpu_usage`                            | CPU usage of process                   |
+| `system_cpu_usage`                             | (If using Spring Native or OS metrics) |
+| `custom_orders_placed`                         | Your custom metric (counter)           |
+
+| Metric Name                          | Description                    |
+| ------------------------------------ | ------------------------------ |
+| `http_server_requests_seconds_count` | Total number of HTTP requests  |
+| `http_server_requests_seconds_sum`   | Total duration of all requests |
+| `jvm_memory_used_bytes`              | Memory used in bytes           |
+| `jvm_gc_pause_seconds`               | GC pause time                  |
+| `process_cpu_usage`                  | App CPU usage                  |
+| `system_cpu_usage`                   | System-wide CPU usage          |
+| `logback_events_total`               | Log events count by level      |
+
+
+Aggregate Functions:
+
+| **Query**                                           | **Description** |
+| --------------------------------------------------- | --------------- |
+| `sum(rate(http_server_requests_seconds_count[1m]))` | Total req/sec   |
+| `avg(jvm_memory_used_bytes)`                        | Avg memory used |
+| `max(process_cpu_usage)`                            | Max CPU usage   |
+
+
+Explore Prometheus Web UI
+-------------------------
+localhost:9091
+
+-> Start typing metric names like: http_, jvm_, process_, kafka_, etc.
+
+-> Prometheus autocompletes and shows valid metrics.
+
+-> You can experiment like: type like below
+
+rate(http_server_requests_seconds_count[1m])
+sum(jvm_memory_used_bytes) by (area)
+
+-> once the results are displayed, Use the 'Graph', 'Table' and 'Explain' tabs below the query search
+-> Use these options and others options like time selection to see the desired ouput
+
+PromLens (PromQL Helper)
+--------------------------
+
+Visit below links for more info.
+https://promlens.com
+https://prometheus.io/docs/prometheus/latest/querying/basics/
+
+
+Grafana
+-------
+
+use Prebuilt Dashboards
+one the right side of the Grafana UI search for '+' icon → Import dashboard → Enter ID below id in the import dashboard tab -> load
+
+| Tool / Service | Dashboard Name           | ID                                |
+| -------------- | ------------------------ | --------------------------------- |
+| Spring Boot    | Micrometer / JVM         | `6756`                            |
+| JVM Metrics    | JVM Overview             | `4701`                            |
+| Kafka          | Kafka Exporter Overview  | `7589`, `12476`, `13502`, `12708` |
+| Kafka Lag      | Kafka Consumer Group Lag | `14183`                           |
+| Docker         | Docker Monitoring        | `179`                             |
+| MySQL          | MySQL Overview           | `7362`                            |
+| PostgreSQL     | PostgreSQL Perf          | `9628`                            |
+
+
+Kafka Metrics (if using Kafka Exporter)
+| **Query**                                                     | **Meaning**                 |
+| ------------------------------------------------------------- | --------------------------- |
+| `kafka_consumergroup_lag{consumergroup="my-consumer-group"}`  | Consumer lag                |
+| `kafka_topic_partition_current_offset`                        | Current offsets             |
+| `kafka_broker_partition_leader`                               | Partition leaders           |
+| `rate(kafka_server_brokertopicmetrics_messages_in_total[5m])` | Kafka incoming message rate |
+
+
+How to Find the Dashboard ID
+------------------------------
+Visit: https://grafana.com/grafana/dashboards
+
+scroll down to see an option in the type bar for search dashboards
+-> type springboot
+-> it will display few dashboards
+-> select any of them by clicking the dashboard
+-> on the mid right side we can see an option 'Copy ID to clipboard'
+-> id will be copied
+-> go to Grafana page
+-> on the top left we have menubar
+-> select dashboard
+-> on the top right side we have tab 'New', select 'import' from the dropdown box
+-> paste the ID in the import dashboard and hit Load
+-> select the database as Prometheus and hit on load again
+-> now we can see the statistics
+-> on the top we have an option selecting the application, instances etc to see the statistics.
+
+Look at the URL in your browser’s address bar.
+
+
+
+
+
