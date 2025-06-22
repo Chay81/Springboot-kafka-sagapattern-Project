@@ -57,7 +57,7 @@ Json used for example
   "price": 20000,
   "stock": 70,
   "brandName":"Lenovo",
-  "modelNumber":"14A"
+  "modelNumber":"14C"
 }
 
 
