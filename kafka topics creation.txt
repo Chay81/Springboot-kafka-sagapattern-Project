@@ -31,6 +31,8 @@ fail-case
 kafka-console-producer --broker-list localhost:9092 --topic orders
 > {"orderId":123,"product":"FAIL-CASE"}
 
+Note: if under the application.yml the configuration to kafka admin auto create is enabled or true, then no need to create topics manually.
+
 
 delete topic
 -------------
