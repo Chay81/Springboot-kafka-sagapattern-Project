@@ -31,8 +31,13 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      # Replace autobuild with manual Maven build
+      - name: Build all services manually
+        run: |
+          cd order-service && mvn clean install -DskipTests && cd ..
+          cd inventory-service && mvn clean install -DskipTests && cd ..
+          cd Spring-Gateway && mvn clean install -DskipTests && cd ..
+          cd eureka-server && mvn clean install -DskipTests && cd ..
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
