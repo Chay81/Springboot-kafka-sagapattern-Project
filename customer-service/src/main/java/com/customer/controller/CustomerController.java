@@ -56,15 +56,10 @@ public class CustomerController {
 
     @DeleteMapping("/{customerId}")
     public ResponseEntity<String> deleteCustomer(@PathVariable Long customerId) {
-
-        log.info("Deleting details of the customer with ID : {}", customerId);
-        try {
-            customerService.deleteCustomer(customerId);
-            return ResponseEntity.ok("Customer with ID " + customerId + " deleted successfully");
-        } catch (ResourceNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
-
-    }
+    log.info("Deleting details of the customer with ID : {}", customerId);
+    customerService.deleteCustomer(customerId);  // Throws exception if not found
+    return ResponseEntity.ok("Customer with ID " + customerId + " deleted successfully");
+}
+	
 
 }
