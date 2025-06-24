@@ -8,5 +8,4 @@ import lombok.Data;
 public class OrderResponse {
     private String message;
     private Order order;
-
 }
