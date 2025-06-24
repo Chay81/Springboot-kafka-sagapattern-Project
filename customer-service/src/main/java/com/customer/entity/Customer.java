@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
+@Table(name = "customers")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "customers")
 public class Customer {
 
     @Id
@@ -25,15 +25,30 @@ public class Customer {
     private String customerName;
     private String phoneNumber;
 
-    private boolean sameAddress; // Used to copy billing to shipping if true
+    @Transient
+    private boolean sameAddress; // Used only for request payload, not stored in DB
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Address> addresses = new ArrayList<>();
+    private List<Address> billingAddress = new ArrayList<>();
 
-    // Convenience method
-    public void addAddress(Address address) {
-        address.setCustomer(this);
-        addresses.add(address);
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Address> shippingAddress = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Customer customer = (Customer) o;
+        return sameAddress == customer.sameAddress
+                && Objects.equals(customerId, customer.customerId)
+                && Objects.equals(customerName, customer.customerName)
+                && Objects.equals(phoneNumber, customer.phoneNumber)
+                && Objects.equals(billingAddress, customer.billingAddress)
+                && Objects.equals(shippingAddress, customer.shippingAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(customerId, customerName, phoneNumber, sameAddress, billingAddress, shippingAddress);
     }
 
     @Override
@@ -43,19 +58,8 @@ public class Customer {
                 ", customerName='" + customerName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", sameAddress=" + sameAddress +
-                ", addresses=" + addresses +
                 '}';
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        Customer customer = (Customer) o;
-        return sameAddress == customer.sameAddress && Objects.equals(customerId, customer.customerId) && Objects.equals(customerName, customer.customerName) && Objects.equals(phoneNumber, customer.phoneNumber) && Objects.equals(addresses, customer.addresses);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(customerId, customerName, phoneNumber, sameAddress, addresses);
-    }
 }
