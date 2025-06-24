@@ -33,6 +33,16 @@ spring:
 #              filters:
 #                - StripPrefix=1
 
+            - id: customer-service
+              uri: lb://CUSTOMER-SERVICE
+              predicates:
+                - Path=/customers/**
+            # below configuration is needed if endpoint is to be run like localhost:8765/inventory-service/inventory
+            #  filters:
+            #    - StripPrefix=1
+
+
+
 # Eureka Configuration
 eureka:
   client:

@@ -1,0 +1,306 @@
+1. Create Customer with same billing and shipping address
+---------------------------------------------------------
+
+POST Request to create a customer
+endpoint: localhost:8083/customers
+if spring gateway is used
+then the endpoint will be localhost:8765/customers
+
+URL: 
+
+{
+  "customerName": "Chaitanya Yenamandra",
+  "phoneNumber": "9998877665",
+  "sameAddress": true,
+  "billingAddress": [
+    {
+      "apartmentName": "Palm Meadows",
+      "addLine1": "123 MG Road",
+      "addLine2": "Near Park",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "zipCode": "560001"
+    }
+  ],
+  "shippingAddress": []
+}
+
+
+Response:
+--------
+
+{
+    "customerId": 2,
+    "customerName": "Anjali Rao",
+    "phoneNumber": "9876543210",
+    "sameAddress": false,
+    "billingAddress": [
+        {
+            "addressId": 3,
+            "apartmentName": "Palm Meadows",
+            "addLine1": "12th Cross Road",
+            "addLine2": "Whitefield",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "zipCode": "560066",
+            "addressType": "BILLING"
+        }
+    ],
+    "shippingAddress": [
+        {
+            "addressId": 4,
+            "apartmentName": "Lakeview Residency",
+            "addLine1": "5th Main Road",
+            "addLine2": "Madhapur",
+            "city": "Hyderabad",
+            "state": "Telangana",
+            "zipCode": "500081",
+            "addressType": "SHIPPING"
+        }
+    ]
+}
+
+
+2. Create customer with different Address
+-----------------------------------------
+
+POST Request to create a customer
+endpoint: localhost:8083/customers
+if spring gateway is used
+then the endpoint will be localhost:8765/customers
+
+JSON request
+------------
+
+{
+  "customerName": "Anjali Rao",
+  "phoneNumber": "9876543210",
+  "sameAddress": false,
+  "billingAddress": [
+    {
+      "apartmentName": "Palm Meadows",
+      "addLine1": "12th Cross Road",
+      "addLine2": "Whitefield",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "zipCode": "560066"
+    }
+  ],
+  "shippingAddress": [
+    {
+      "apartmentName": "Lakeview Residency",
+      "addLine1": "5th Main Road",
+      "addLine2": "Madhapur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zipCode": "500081"
+    }
+  ]
+}
+
+
+Response:
+---------
+
+{
+    "customerId": 2,
+    "customerName": "Anjali Rao",
+    "phoneNumber": "9876543210",
+    "sameAddress": false,
+    "billingAddress": [
+        {
+            "addressId": 3,
+            "apartmentName": "Palm Meadows",
+            "addLine1": "12th Cross Road",
+            "addLine2": "Whitefield",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "zipCode": "560066",
+            "addressType": "BILLING"
+        }
+    ],
+    "shippingAddress": [
+        {
+            "addressId": 4,
+            "apartmentName": "Lakeview Residency",
+            "addLine1": "5th Main Road",
+            "addLine2": "Madhapur",
+            "city": "Hyderabad",
+            "state": "Telangana",
+            "zipCode": "500081",
+            "addressType": "SHIPPING"
+        }
+    ]
+}
+
+
+3. Update Customer:
+-------------------
+
+PUT Request to update a customer Phone and emailAddress
+endpoint: localhost:8083/customers/2
+if spring gateway is used
+then the endpoint will be localhost:8765/customers/2
+
+
+{
+  "phoneNumber": "88877663210",
+  "sameAddress": false,
+  "billingAddress": [
+    {
+      "apartmentName": "Galaxy Heights",
+      "addLine1": "1st Main Road",
+      "addLine2": "Kundalahalli",
+      "city": "Bangalore",
+      "state": "Karnataka",
+      "zipCode": "560037"
+    }
+  ],
+  "shippingAddress": [
+    {
+      "apartmentName": "Sunshine Residency",
+      "addLine1": "Near HiTech City",
+      "addLine2": "Madhapur",
+      "city": "Hyderabad",
+      "state": "Telangana",
+      "zipCode": "500081"
+    }
+  ]
+}
+
+
+Response:
+---------
+
+{
+    "customerId": 2,
+    "customerName": "Anjali Rao",
+    "phoneNumber": "88877663213",
+    "sameAddress": false,
+    "billingAddress": [
+        {
+            "addressId": 9,
+            "apartmentName": "Galaxy Heights",
+            "addLine1": "1st Main Road",
+            "addLine2": "Kundalahalli",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "zipCode": "560037",
+            "addressType": "BILLING"
+        }
+    ],
+    "shippingAddress": [
+        {
+            "addressId": 10,
+            "apartmentName": "Sunshine Residency",
+            "addLine1": "Near HiTech City",
+            "addLine2": "Madhapur",
+            "city": "Hyderabad",
+            "state": "Telangana",
+            "zipCode": "500081",
+            "addressType": "SHIPPING"
+        }
+    ]
+}
+
+
+4. Get Customer By ID
+---------------------
+
+Example: if the customer id is 2 as shown above
+then endpoint will be localhost:8083/customers/2
+if spring gateway is used
+then the endpoint will be localhost:8765/customers/2
+
+Response:
+--------
+
+{
+    "customerId": 2,
+    "customerName": "Anjali Rao",
+    "phoneNumber": "88877663213",
+    "sameAddress": false,
+    "billingAddress": [
+        {
+            "addressId": 9,
+            "apartmentName": "Galaxy Heights",
+            "addLine1": "1st Main Road",
+            "addLine2": "Kundalahalli",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "zipCode": "560037",
+            "addressType": "BILLING"
+        }
+    ],
+    "shippingAddress": [
+        {
+            "addressId": 10,
+            "apartmentName": "Sunshine Residency",
+            "addLine1": "Near HiTech City",
+            "addLine2": "Madhapur",
+            "city": "Hyderabad",
+            "state": "Telangana",
+            "zipCode": "500081",
+            "addressType": "SHIPPING"
+        }
+    ]
+}
+
+
+5. Get All Customers
+---------------------
+
+Example: for this endpoint no arguments will be needed
+then endpoint will be localhost:8083/customers
+if spring gateway is used
+then the endpoint will be localhost:8765/customers
+
+Response:
+--------
+
+[
+    {
+        "customerId": 2,
+        "customerName": "Anjali Rao",
+        "phoneNumber": "88877663210",
+        "sameAddress": false,
+        "billingAddress": [
+            {
+                "addressId": 5,
+                "apartmentName": "Galaxy Heights",
+                "addLine1": "1st Main Road",
+                "addLine2": "Kundalahalli",
+                "city": "Bangalore",
+                "state": "Karnataka",
+                "zipCode": "560037",
+                "addressType": "BILLING"
+            }
+        ],
+        "shippingAddress": [
+            {
+                "addressId": 6,
+                "apartmentName": "Sunshine Residency",
+                "addLine1": "Near HiTech City",
+                "addLine2": "Madhapur",
+                "city": "Hyderabad",
+                "state": "Telangana",
+                "zipCode": "500081",
+                "addressType": "SHIPPING"
+            }
+        ]
+    }
+]
+
+
+6. Delete Customer By ID
+------------------------
+
+Example: if the customer id is 2 as shown above
+then endpoint will be localhost:8083/customers/2
+if spring gateway is used
+then the endpoint will be localhost:8765/customers/2
+
+Response:
+--------
+
+No Response will be shown but customer will be deleted.

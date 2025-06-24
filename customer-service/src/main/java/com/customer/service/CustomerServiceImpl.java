@@ -1,106 +1,151 @@
 package com.customer.service;
 
 import com.customer.entity.Address;
+import com.customer.entity.AddressType;
 import com.customer.entity.Customer;
 import com.customer.exceptions.CustomerNotFoundException;
+import com.customer.repository.AddressRepository;
 import com.customer.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CustomerServiceImpl implements CustomerService {
 
-    private final CustomerRepository customerRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private AddressRepository addressRepository;
 
     @Override
-    public Customer createCustomer(Customer customer) {
+    public Customer createCustomer(Customer customer, boolean sameAddress) {
+
         log.info("Creating customer with details: {}", customer);
-
-        List<Address> finalAddresses = new ArrayList<>();
-
-        for (Address addr : customer.getAddresses()) {
-            if ("BILLING".equalsIgnoreCase(addr.getAddressType())) {
-                addr.setCustomer(customer);
-                finalAddresses.add(addr);
-
-                // If sameAddress is true, clone this address as SHIPPING
-                if (customer.isSameAddress()) {
-                    Address shippingCopy = new Address();
-                    BeanUtils.copyProperties(addr, shippingCopy, "addressId");
-                    shippingCopy.setAddressType("SHIPPING");
-                    shippingCopy.setCustomer(customer);
-                    finalAddresses.add(shippingCopy);
-                }
-            } else if ("SHIPPING".equalsIgnoreCase(addr.getAddressType()) && !customer.isSameAddress()) {
-                addr.setCustomer(customer);
-                finalAddresses.add(addr);
-            }
+        if (sameAddress) {
+            List<Address> copied = copyAddresses(customer.getBillingAddress(), AddressType.SHIPPING);
+            customer.setShippingAddress(copied);
         }
 
-        customer.setAddresses(finalAddresses);
+        assignCustomerToAddresses(customer);
+
+        log.info("Customer created with details: {}", customer);
         return customerRepository.save(customer);
     }
-
-    @Override
-    public Customer updateCustomer(Long id, Customer updatedCustomer) {
-        log.info("Updating customer with ID: {}", id);
-
-        Customer existing = customerRepository.findById(id)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + id));
-
-        existing.setCustomerName(updatedCustomer.getCustomerName());
-        existing.setPhoneNumber(updatedCustomer.getPhoneNumber());
-        existing.setSameAddress(updatedCustomer.isSameAddress());
-
-        List<Address> updatedAddresses = new ArrayList<>();
-
-        for (Address addr : updatedCustomer.getAddresses()) {
-            if ("BILLING".equalsIgnoreCase(addr.getAddressType())) {
-                addr.setCustomer(existing);
-                updatedAddresses.add(addr);
-
-                if (updatedCustomer.isSameAddress()) {
-                    Address shippingCopy = new Address();
-                    BeanUtils.copyProperties(addr, shippingCopy, "addressId");
-                    shippingCopy.setAddressType("SHIPPING");
-                    shippingCopy.setCustomer(existing);
-                    updatedAddresses.add(shippingCopy);
-                }
-
-            } else if ("SHIPPING".equalsIgnoreCase(addr.getAddressType()) && !updatedCustomer.isSameAddress()) {
-                addr.setCustomer(existing);
-                updatedAddresses.add(addr);
-            }
-        }
-
-        existing.getAddresses().clear(); // Clean old addresses
-        existing.getAddresses().addAll(updatedAddresses); // Replace with updated ones
-
-        log.info("Updated customer saved: {}", existing);
-        return customerRepository.save(existing);
-    }
-
 
     @Override
     public Customer getCustomerById(Long customerId) {
 
         log.info("Finding customer with customer Id : {}", customerId);
-        return customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
+
+        List<Address> allAddresses = addressRepository.findByCustomer(customer);
+
+        List<Address> billing = allAddresses.stream()
+                .filter(a -> a.getAddressType() == AddressType.BILLING)
+                .collect(Collectors.toList());
+
+        List<Address> shipping = allAddresses.stream()
+                .filter(a -> a.getAddressType() == AddressType.SHIPPING)
+                .collect(Collectors.toList());
+
+        customer.setBillingAddress(billing);
+        customer.setShippingAddress(shipping);
+
+        return customer;
 
     }
 
     @Override
     public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+
+        List<Customer> customers = customerRepository.findAll();
+
+        for (Customer customer : customers) {
+            List<Address> allAddresses = addressRepository.findByCustomer(customer);
+
+            List<Address> billing = allAddresses.stream()
+                    .filter(a -> a.getAddressType() == AddressType.BILLING)
+                    .collect(Collectors.toList());
+
+            List<Address> shipping = allAddresses.stream()
+                    .filter(a -> a.getAddressType() == AddressType.SHIPPING)
+                    .collect(Collectors.toList());
+
+            customer.setBillingAddress(billing);
+            customer.setShippingAddress(shipping);
+        }
+
+        return customers;
     }
+
+    @Override
+    public Customer updateCustomer(Long customerId, Customer updatedCustomer) {
+        Customer existing = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
+
+        log.info("Updating customer with ID: {}", customerId);
+
+        // Update phone number
+        existing.setPhoneNumber(updatedCustomer.getPhoneNumber());
+
+        // Handle sameAddress logic
+        boolean sameAddress = updatedCustomer.isSameAddress();
+        List<Address> billingAddress = updatedCustomer.getBillingAddress();
+        List<Address> shippingAddress;
+
+        if (sameAddress) {
+            for (Address address : billingAddress) {
+                address.setAddressType(AddressType.BILLING);
+                address.setCustomer(existing);
+            }
+
+            shippingAddress = billingAddress.stream().map(b -> {
+                Address copy = new Address();
+                copy.setApartmentName(b.getApartmentName());
+                copy.setAddLine1(b.getAddLine1());
+                copy.setAddLine2(b.getAddLine2());
+                copy.setCity(b.getCity());
+                copy.setState(b.getState());
+                copy.setZipCode(b.getZipCode());
+                copy.setAddressType(AddressType.SHIPPING);
+                copy.setCustomer(existing);
+                return copy;
+            }).collect(Collectors.toList());
+
+        } else {
+            for (Address address : billingAddress) {
+                address.setAddressType(AddressType.BILLING);
+                address.setCustomer(existing);
+            }
+
+            shippingAddress = updatedCustomer.getShippingAddress();
+            for (Address address : shippingAddress) {
+                address.setAddressType(AddressType.SHIPPING);
+                address.setCustomer(existing);
+            }
+        }
+
+        // Instead of setBillingAddress, modify the existing list
+        existing.getBillingAddress().clear();
+        existing.getBillingAddress().addAll(billingAddress);
+
+        existing.getShippingAddress().clear();
+        existing.getShippingAddress().addAll(shippingAddress);
+
+        return customerRepository.save(existing);
+    }
+
 
     @Override
     public void deleteCustomer(Long customerId) {
@@ -108,4 +153,41 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
         customerRepository.delete(customer);
     }
+
+    private void assignCustomerToAddresses(Customer customer) {
+
+        log.info(" Assigning address with customer Id : {}", customer.getCustomerId());
+        customer.getBillingAddress().forEach(address -> {
+            address.setCustomer(customer);
+            address.setAddressType(AddressType.BILLING);
+        });
+
+        customer.getShippingAddress().forEach(address -> {
+            address.setCustomer(customer);
+            address.setAddressType(AddressType.SHIPPING);
+
+            log.info(" Assigned address with customer Id : {}", customer.getCustomerId());
+        });
+    }
+
+    private List<Address> copyAddresses(List<Address> original, AddressType type) {
+
+        log.info(" Copying address with customer Id ");
+        List<Address> copied = new ArrayList<>();
+        for (Address address : original) {
+            Address clone = new Address();
+            clone.setApartmentName(address.getApartmentName());
+            clone.setAddLine1(address.getAddLine1());
+            clone.setAddLine2(address.getAddLine2());
+            clone.setCity(address.getCity());
+            clone.setState(address.getState());
+            clone.setZipCode(address.getZipCode());
+            clone.setAddressType(type);
+            copied.add(clone);
+        }
+
+        log.info("Address Copied");
+        return copied;
+    }
+
 }

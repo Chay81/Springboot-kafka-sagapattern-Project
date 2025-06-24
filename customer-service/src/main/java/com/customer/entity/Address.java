@@ -9,13 +9,12 @@ import lombok.Setter;
 
 import java.util.Objects;
 
-
 @Entity
+@Table(name = "address")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "address")
 public class Address {
 
     @Id
@@ -29,27 +28,15 @@ public class Address {
     private String state;
     private String zipCode;
 
-    private String addressType; // "BILLING" or "SHIPPING"
+    @Enumerated(EnumType.STRING)
+    @Column(name = "address_type", nullable = false)
+    private AddressType addressType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+
+    @ManyToOne
     @JoinColumn(name = "customer_id")
     @JsonIgnore
     private Customer customer;
-
-    @Override
-    public String toString() {
-        return "Address{" +
-                "addressId=" + addressId +
-                ", apartmentName='" + apartmentName + '\'' +
-                ", addLine1='" + addLine1 + '\'' +
-                ", addLine2='" + addLine2 + '\'' +
-                ", city='" + city + '\'' +
-                ", state='" + state + '\'' +
-                ", zipCode='" + zipCode + '\'' +
-                ", addressType='" + addressType + '\'' +
-                ", customer=" + customer +
-                '}';
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -62,4 +49,19 @@ public class Address {
     public int hashCode() {
         return Objects.hash(addressId, apartmentName, addLine1, addLine2, city, state, zipCode, addressType, customer);
     }
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "addressId=" + addressId +
+                ", apartmentName='" + apartmentName + '\'' +
+                ", addLine1='" + addLine1 + '\'' +
+                ", addLine2='" + addLine2 + '\'' +
+                ", city='" + city + '\'' +
+                ", state='" + state + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                ", addressType=" + addressType +
+                '}';
+    }
+
 }
