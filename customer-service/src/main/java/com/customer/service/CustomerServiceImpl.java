@@ -1,17 +1,22 @@
 package com.customer.service;
 
+import com.customer.DTO.CustomerDTO;
 import com.customer.entity.Address;
 import com.customer.entity.AddressType;
 import com.customer.entity.Customer;
 import com.customer.exceptions.CustomerNotFoundException;
+import com.customer.mapper.AddressMapper;
+import com.customer.mapper.CustomerMapper;
 import com.customer.repository.AddressRepository;
 import com.customer.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,81 +32,104 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     private AddressRepository addressRepository;
 
-    @Override
-    public Customer createCustomer(Customer customer, boolean sameAddress) {
+    @Autowired
+    private AddressMapper addressMapper;
 
-        log.info("Creating customer with details: {}", customer);
+    @Autowired
+    private CustomerMapper customerMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public CustomerDTO createCustomer(CustomerDTO customerDTO, boolean sameAddress) {
+        Customer customer = customerMapper.toEntity(customerDTO);
+
+        // Encrypt password
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+
         if (sameAddress) {
             List<Address> copied = copyAddresses(customer.getBillingAddress(), AddressType.SHIPPING);
             customer.setShippingAddress(copied);
         }
 
         assignCustomerToAddresses(customer);
-
-        log.info("Customer created with details: {}", customer);
-        return customerRepository.save(customer);
+        Customer saved = customerRepository.save(customer);
+        return customerMapper.toDTO(saved);
     }
 
     @Override
-    public Customer getCustomerById(Long customerId) {
-
+    public CustomerDTO getCustomerById(Long customerId) {
         log.info("Finding customer with customer Id : {}", customerId);
+
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
 
         List<Address> allAddresses = addressRepository.findByCustomer(customer);
 
-        List<Address> billing = allAddresses.stream()
-                .filter(a -> a.getAddressType() == AddressType.BILLING)
-                .collect(Collectors.toList());
+        customer.setBillingAddress(
+                allAddresses.stream()
+                        .filter(a -> a.getAddressType() == AddressType.BILLING)
+                        .collect(Collectors.toList())
+        );
 
-        List<Address> shipping = allAddresses.stream()
-                .filter(a -> a.getAddressType() == AddressType.SHIPPING)
-                .collect(Collectors.toList());
+        customer.setShippingAddress(
+                allAddresses.stream()
+                        .filter(a -> a.getAddressType() == AddressType.SHIPPING)
+                        .collect(Collectors.toList())
+        );
 
-        customer.setBillingAddress(billing);
-        customer.setShippingAddress(shipping);
-
-        return customer;
-
+        return customerMapper.toDTO(customer);
     }
 
-    @Override
-    public List<Customer> getAllCustomers() {
 
+
+    @Override
+    public List<CustomerDTO> getAllCustomers() {
         List<Customer> customers = customerRepository.findAll();
 
         for (Customer customer : customers) {
             List<Address> allAddresses = addressRepository.findByCustomer(customer);
 
-            List<Address> billing = allAddresses.stream()
-                    .filter(a -> a.getAddressType() == AddressType.BILLING)
-                    .collect(Collectors.toList());
+            customer.setBillingAddress(
+                    allAddresses.stream()
+                            .filter(a -> a.getAddressType() == AddressType.BILLING)
+                            .collect(Collectors.toList())
+            );
 
-            List<Address> shipping = allAddresses.stream()
-                    .filter(a -> a.getAddressType() == AddressType.SHIPPING)
-                    .collect(Collectors.toList());
-
-            customer.setBillingAddress(billing);
-            customer.setShippingAddress(shipping);
+            customer.setShippingAddress(
+                    allAddresses.stream()
+                            .filter(a -> a.getAddressType() == AddressType.SHIPPING)
+                            .collect(Collectors.toList())
+            );
         }
 
-        return customers;
+        return customers.stream()
+                .map(customerMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
+
     @Override
-    public Customer updateCustomer(Long customerId, Customer updatedCustomer) {
+    public CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO) {
+
         Customer existing = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
 
         log.info("Updating customer with ID: {}", customerId);
 
-        // Update phone number
-        existing.setPhoneNumber(updatedCustomer.getPhoneNumber());
+        existing.setPhoneNumber(updatedCustomerDTO.getPhoneNumber());
+        existing.setEmailAddress(updatedCustomerDTO.getEmailAddress());
 
-        // Handle sameAddress logic
-        boolean sameAddress = updatedCustomer.isSameAddress();
-        List<Address> billingAddress = updatedCustomer.getBillingAddress();
+        // Update and re-encrypt password
+        if (updatedCustomerDTO.getPassword() != null && !updatedCustomerDTO.getPassword().isBlank()) {
+            existing.setPassword(passwordEncoder.encode(updatedCustomerDTO.getPassword()));
+        }
+        
+        boolean sameAddress = updatedCustomerDTO.isSameAddress();
+        List<Address> billingAddress = updatedCustomerDTO.getBillingAddress()
+                .stream().map(addressMapper::toEntity).collect(Collectors.toList());
+
         List<Address> shippingAddress;
 
         if (sameAddress) {
@@ -129,22 +157,25 @@ public class CustomerServiceImpl implements CustomerService {
                 address.setCustomer(existing);
             }
 
-            shippingAddress = updatedCustomer.getShippingAddress();
+            shippingAddress = updatedCustomerDTO.getShippingAddress()
+                    .stream().map(addressMapper::toEntity).collect(Collectors.toList());
+
             for (Address address : shippingAddress) {
                 address.setAddressType(AddressType.SHIPPING);
                 address.setCustomer(existing);
             }
         }
 
-        // Instead of setBillingAddress, modify the existing list
         existing.getBillingAddress().clear();
         existing.getBillingAddress().addAll(billingAddress);
 
         existing.getShippingAddress().clear();
         existing.getShippingAddress().addAll(shippingAddress);
 
-        return customerRepository.save(existing);
+        Customer updated = customerRepository.save(existing);
+        return customerMapper.toDTO(updated);
     }
+
 
 
     @Override
