@@ -6,55 +6,57 @@ endpoint: localhost:8083/customers
 if spring gateway is used
 then the endpoint will be localhost:8765/customers
 
-URL: 
-
 {
-  "customerName": "Chaitanya Yenamandra",
-  "phoneNumber": "9998877665",
+  "customerName": "Rohit Mehra",
+  "phoneNumber": "9876543210",
+  "emailAddress": "rohit.mehra@example.com",
+  "password": "rohit@123",
   "sameAddress": true,
   "billingAddress": [
     {
-      "apartmentName": "Palm Meadows",
-      "addLine1": "123 MG Road",
-      "addLine2": "Near Park",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "zipCode": "560001"
+      "apartmentName": "Sky Towers",
+      "addLine1": "1st Avenue",
+      "addLine2": "Sector 42",
+      "city": "Gurgaon",
+      "state": "Haryana",
+      "zipCode": "122002"
     }
   ],
-  "shippingAddress": []
+  "shippingAddresses": []  // Will be ignored if sameAddress=true
 }
 
+Note: in the response, the id will be encrypted and the password will not be shown as it will be saved only in DB. because it to be WRITE only access.
 
 Response:
 --------
 
 {
-    "customerId": 2,
-    "customerName": "Anjali Rao",
+    "customerId": "8533917d-6e3e-3d37-b775-177992b88389",
+    "customerName": "Rohit Mehra",
     "phoneNumber": "9876543210",
-    "sameAddress": false,
+    "emailAddress": "rohit.mehra@example.com",
+    "sameAddress": true,
     "billingAddress": [
         {
-            "addressId": 3,
-            "apartmentName": "Palm Meadows",
-            "addLine1": "12th Cross Road",
-            "addLine2": "Whitefield",
-            "city": "Bangalore",
-            "state": "Karnataka",
-            "zipCode": "560066",
+            "addressId": 19,
+            "apartmentName": "Sky Towers",
+            "addLine1": "1st Avenue",
+            "addLine2": "Sector 42",
+            "city": "Gurgaon",
+            "state": "Haryana",
+            "zipCode": "122002",
             "addressType": "BILLING"
         }
     ],
     "shippingAddress": [
         {
-            "addressId": 4,
-            "apartmentName": "Lakeview Residency",
-            "addLine1": "5th Main Road",
-            "addLine2": "Madhapur",
-            "city": "Hyderabad",
-            "state": "Telangana",
-            "zipCode": "500081",
+            "addressId": 20,
+            "apartmentName": "Sky Towers",
+            "addLine1": "1st Avenue",
+            "addLine2": "Sector 42",
+            "city": "Gurgaon",
+            "state": "Haryana",
+            "zipCode": "122002",
             "addressType": "SHIPPING"
         }
     ]
@@ -70,30 +72,32 @@ if spring gateway is used
 then the endpoint will be localhost:8765/customers
 
 JSON request
-------------
+-------------
 
 {
-  "customerName": "Anjali Rao",
-  "phoneNumber": "9876543210",
+  "customerName": "Neha Verma",
+  "phoneNumber": "9876543211",
+  "emailAddress": "neha.verma@example.com",
+  "password": "neha@123",
   "sameAddress": false,
   "billingAddress": [
     {
-      "apartmentName": "Palm Meadows",
-      "addLine1": "12th Cross Road",
-      "addLine2": "Whitefield",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "zipCode": "560066"
+      "apartmentName": "Golden Heights",
+      "addLine1": "12th Street",
+      "addLine2": "Central Park",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400001"
     }
   ],
   "shippingAddress": [
     {
-      "apartmentName": "Lakeview Residency",
-      "addLine1": "5th Main Road",
-      "addLine2": "Madhapur",
-      "city": "Hyderabad",
-      "state": "Telangana",
-      "zipCode": "500081"
+      "apartmentName": "Ocean View",
+      "addLine1": "5th Beach Road",
+      "addLine2": "Juhu",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400049"
     }
   ]
 }
@@ -103,31 +107,32 @@ Response:
 ---------
 
 {
-    "customerId": 2,
-    "customerName": "Anjali Rao",
-    "phoneNumber": "9876543210",
+    "customerId": "25ffb4b5-7c36-35f1-8013-0e350c39032b",
+    "customerName": "Neha Verma",
+    "phoneNumber": "9876543211",
+    "emailAddress": "neha.verma@example.com",
     "sameAddress": false,
     "billingAddress": [
         {
-            "addressId": 3,
-            "apartmentName": "Palm Meadows",
-            "addLine1": "12th Cross Road",
-            "addLine2": "Whitefield",
-            "city": "Bangalore",
-            "state": "Karnataka",
-            "zipCode": "560066",
+            "addressId": 23,
+            "apartmentName": "Golden Heights",
+            "addLine1": "12th Street",
+            "addLine2": "Central Park",
+            "city": "Mumbai",
+            "state": "Maharashtra",
+            "zipCode": "400001",
             "addressType": "BILLING"
         }
     ],
     "shippingAddress": [
         {
-            "addressId": 4,
-            "apartmentName": "Lakeview Residency",
-            "addLine1": "5th Main Road",
-            "addLine2": "Madhapur",
-            "city": "Hyderabad",
-            "state": "Telangana",
-            "zipCode": "500081",
+            "addressId": 24,
+            "apartmentName": "Ocean View",
+            "addLine1": "5th Beach Road",
+            "addLine2": "Juhu",
+            "city": "Mumbai",
+            "state": "Maharashtra",
+            "zipCode": "400049",
             "addressType": "SHIPPING"
         }
     ]
@@ -137,33 +142,37 @@ Response:
 3. Update Customer:
 -------------------
 
-PUT Request to update a customer Phone and emailAddress
-endpoint: localhost:8083/customers/2
+PUT Request to update a customer phoneNumber, password and emailAddress
+endpoint: localhost:8083/customers/9
 if spring gateway is used
-then the endpoint will be localhost:8765/customers/2
+then the endpoint will be localhost:8765/customers/9
 
-
+Json Request
+------------
 {
-  "phoneNumber": "88877663210",
+  "customerName": "Neha Verma",
+  "phoneNumber": "9876543222", // changed
+  "emailAddress": "neha.verma@testUpdate.com", // changed
+  "password": "updateTest@123", // changed
   "sameAddress": false,
   "billingAddress": [
     {
-      "apartmentName": "Galaxy Heights",
-      "addLine1": "1st Main Road",
-      "addLine2": "Kundalahalli",
-      "city": "Bangalore",
-      "state": "Karnataka",
-      "zipCode": "560037"
+      "apartmentName": "Golden Heights",
+      "addLine1": "12th Street",
+      "addLine2": "Central Park",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400001"
     }
   ],
   "shippingAddress": [
     {
-      "apartmentName": "Sunshine Residency",
-      "addLine1": "Near HiTech City",
-      "addLine2": "Madhapur",
-      "city": "Hyderabad",
-      "state": "Telangana",
-      "zipCode": "500081"
+      "apartmentName": "Ocean View",
+      "addLine1": "5th Beach Road",
+      "addLine2": "Juhu",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400049"
     }
   ]
 }
@@ -173,74 +182,75 @@ Response:
 ---------
 
 {
-    "customerId": 2,
-    "customerName": "Anjali Rao",
-    "phoneNumber": "88877663213",
+    "customerId": "25ffb4b5-7c36-35f1-8013-0e350c39032b",
+    "customerName": "Neha Verma",
+    "phoneNumber": "9876543222",
+    "emailAddress": "neha.verma@testUpdate.com",
     "sameAddress": false,
     "billingAddress": [
         {
-            "addressId": 9,
-            "apartmentName": "Galaxy Heights",
-            "addLine1": "1st Main Road",
-            "addLine2": "Kundalahalli",
-            "city": "Bangalore",
-            "state": "Karnataka",
-            "zipCode": "560037",
+            "addressId": 25,
+            "apartmentName": "Golden Heights",
+            "addLine1": "12th Street",
+            "addLine2": "Central Park",
+            "city": "Mumbai",
+            "state": "Maharashtra",
+            "zipCode": "400001",
             "addressType": "BILLING"
         }
     ],
     "shippingAddress": [
         {
-            "addressId": 10,
-            "apartmentName": "Sunshine Residency",
-            "addLine1": "Near HiTech City",
-            "addLine2": "Madhapur",
-            "city": "Hyderabad",
-            "state": "Telangana",
-            "zipCode": "500081",
+            "addressId": 26,
+            "apartmentName": "Ocean View",
+            "addLine1": "5th Beach Road",
+            "addLine2": "Juhu",
+            "city": "Mumbai",
+            "state": "Maharashtra",
+            "zipCode": "400049",
             "addressType": "SHIPPING"
         }
     ]
 }
 
-
 4. Get Customer By ID
 ---------------------
 
-Example: if the customer id is 2 as shown above
-then endpoint will be localhost:8083/customers/2
+Example: if the customer id is 6
+then endpoint will be localhost:8083/customers/6
 if spring gateway is used
-then the endpoint will be localhost:8765/customers/2
+then the endpoint will be localhost:8765/customers/6
 
 Response:
 --------
 
 {
-    "customerId": 2,
-    "customerName": "Anjali Rao",
-    "phoneNumber": "88877663213",
+    "customerId": "8f1e3649-dac6-3c5c-8b11-cbde9a3acf20",
+    "customerName": "Neha Verma",
+    "phoneNumber": "9998887776",
+    "emailAddress": "neha.new@example.com",
     "sameAddress": false,
     "billingAddress": [
         {
-            "addressId": 9,
-            "apartmentName": "Galaxy Heights",
-            "addLine1": "1st Main Road",
-            "addLine2": "Kundalahalli",
-            "city": "Bangalore",
-            "state": "Karnataka",
-            "zipCode": "560037",
+            "addressId": 15,
+            "apartmentName": "Lake Palace",
+            "addLine1": "Old Town Road",
+            "addLine2": "Sector 17",
+            "city": "Chandigarh",
+            "state": "Chandigarh",
+            "zipCode": "160017",
             "addressType": "BILLING"
         }
     ],
     "shippingAddress": [
         {
-            "addressId": 10,
-            "apartmentName": "Sunshine Residency",
-            "addLine1": "Near HiTech City",
-            "addLine2": "Madhapur",
+            "addressId": 16,
+            "apartmentName": "Hill View",
+            "addLine1": "Sunset Boulevard",
+            "addLine2": "Hitech City",
             "city": "Hyderabad",
             "state": "Telangana",
-            "zipCode": "500081",
+            "zipCode": "500084",
             "addressType": "SHIPPING"
         }
     ]
@@ -260,31 +270,65 @@ Response:
 
 [
     {
-        "customerId": 2,
-        "customerName": "Anjali Rao",
-        "phoneNumber": "88877663210",
+        "customerId": "740d87e8-e5da-36c7-ac9d-0329f7787556",
+        "customerName": "Rohit Mehra",
+        "phoneNumber": "9876543210",
+        "emailAddress": "rohit.mehra@example.com",
+        "password": "rohit@123",
         "sameAddress": false,
         "billingAddress": [
             {
                 "addressId": 5,
-                "apartmentName": "Galaxy Heights",
-                "addLine1": "1st Main Road",
-                "addLine2": "Kundalahalli",
-                "city": "Bangalore",
-                "state": "Karnataka",
-                "zipCode": "560037",
+                "apartmentName": "Sky Towers",
+                "addLine1": "1st Avenue",
+                "addLine2": "Sector 42",
+                "city": "Gurgaon",
+                "state": "Haryana",
+                "zipCode": "122002",
                 "addressType": "BILLING"
             }
         ],
         "shippingAddress": [
             {
                 "addressId": 6,
-                "apartmentName": "Sunshine Residency",
-                "addLine1": "Near HiTech City",
-                "addLine2": "Madhapur",
-                "city": "Hyderabad",
-                "state": "Telangana",
-                "zipCode": "500081",
+                "apartmentName": "Sky Towers",
+                "addLine1": "1st Avenue",
+                "addLine2": "Sector 42",
+                "city": "Gurgaon",
+                "state": "Haryana",
+                "zipCode": "122002",
+                "addressType": "SHIPPING"
+            }
+        ]
+    },
+    {
+        "customerId": "f1edb37b-8920-3e8c-bbdb-5b168fdbbb25",
+        "customerName": "Neha Verma",
+        "phoneNumber": "9876543211",
+        "emailAddress": "neha.verma@example.com",
+        "password": "neha@123",
+        "sameAddress": false,
+        "billingAddress": [
+            {
+                "addressId": 7,
+                "apartmentName": "Golden Heights",
+                "addLine1": "12th Street",
+                "addLine2": "Central Park",
+                "city": "Mumbai",
+                "state": "Maharashtra",
+                "zipCode": "400001",
+                "addressType": "BILLING"
+            }
+        ],
+        "shippingAddress": [
+            {
+                "addressId": 8,
+                "apartmentName": "Ocean View",
+                "addLine1": "5th Beach Road",
+                "addLine2": "Juhu",
+                "city": "Mumbai",
+                "state": "Maharashtra",
+                "zipCode": "400049",
                 "addressType": "SHIPPING"
             }
         ]
@@ -295,10 +339,10 @@ Response:
 6. Delete Customer By ID
 ------------------------
 
-Example: if the customer id is 2 as shown above
-then endpoint will be localhost:8083/customers/2
+Example: if the customer id is 6
+then endpoint will be localhost:8083/customers/9
 if spring gateway is used
-then the endpoint will be localhost:8765/customers/2
+then the endpoint will be localhost:8765/customers/9
 
 Response:
 --------

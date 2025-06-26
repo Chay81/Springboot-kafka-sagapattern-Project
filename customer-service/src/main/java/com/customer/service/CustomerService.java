@@ -1,14 +1,20 @@
 package com.customer.service;
 
+import com.customer.DTO.CustomerDTO;
 import com.customer.entity.Customer;
 
 import java.util.List;
 
 public interface CustomerService {
 
-    Customer createCustomer(Customer customer, boolean sameAddress);
-    Customer getCustomerById(Long customerId);
-    List<Customer> getAllCustomers();
-    public Customer updateCustomer(Long customerId, Customer updatedCustomer);
+    CustomerDTO createCustomer(CustomerDTO customerDTO, boolean sameAddress);
+
+    CustomerDTO getCustomerById(Long customerId);
+
+    List<CustomerDTO> getAllCustomers();
+
+    CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO);
+
     void deleteCustomer(Long customerId);
 }
+

@@ -1,6 +1,6 @@
 package com.customer.controller;
 
-import com.customer.entity.Customer;
+import com.customer.DTO.CustomerDTO;
 import com.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,39 +20,39 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerDTO customerDTO) {
 
-        log.info("Creating new customer : {}", customer);
-        Customer savedCustomer = customerService.createCustomer(customer, customer.isSameAddress());
+        log.info("Creating new customer : {}", customerDTO);
+        CustomerDTO savedCustomer = customerService.createCustomer(customerDTO, customerDTO.isSameAddress());
 
-        log.info("Created new customer with details : {}", customer);
+        log.info("Created new customer with details : {}", savedCustomer);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedCustomer);
-
     }
 
+
     @GetMapping("/{customerId}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long customerId) {
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long customerId) {
 
         log.info("Details of the customer with ID : {}", customerId);
-        Customer existingCustomer = customerService.getCustomerById(customerId);
+        CustomerDTO existingCustomer = customerService.getCustomerById(customerId);
         return ResponseEntity.status(HttpStatus.OK).body(existingCustomer);
     }
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
 
         log.info("Details of all the customers:");
         return ResponseEntity.ok(customerService.getAllCustomers());
     }
 
     @PutMapping("/{customerId}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Long customerId, @RequestBody Customer customer) {
-
-        log.info("Updating customer details : {}  with ID {}", customer, customerId);
-        boolean sameAddress = customer.isSameAddress();
-
-        Customer existingCustomer = customerService.updateCustomer(customerId, customer);
-        return ResponseEntity.status(HttpStatus.OK).body(existingCustomer);
+    public ResponseEntity<CustomerDTO> updateCustomer(
+            @PathVariable Long customerId,
+            @RequestBody CustomerDTO customerDTO
+    ) {
+        log.info("Updating customer details : {}  with ID {}", customerDTO, customerId);
+        CustomerDTO updatedCustomer = customerService.updateCustomer(customerId, customerDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedCustomer);
     }
 
     @DeleteMapping("/{customerId}")
@@ -62,6 +62,5 @@ public class CustomerController {
         customerService.deleteCustomer(customerId);  // Throws exception if not found
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
-
 
 }
