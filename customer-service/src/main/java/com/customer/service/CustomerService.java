@@ -1,7 +1,6 @@
 package com.customer.service;
 
 import com.customer.DTO.CustomerDTO;
-import com.customer.entity.Customer;
 
 import java.util.List;
 

@@ -2,9 +2,9 @@
 ---------------------------------------------------------
 
 POST Request to create a customer
-endpoint: localhost:8083/customers
+endpoint: localhost:8083/customers/createCustomer
 if spring gateway is used
-then the endpoint will be localhost:8765/customers
+then the endpoint will be localhost:8765/customers/createCustomer
 
 {
   "customerName": "Rohit Mehra",
@@ -25,7 +25,11 @@ then the endpoint will be localhost:8765/customers
   "shippingAddresses": []  // Will be ignored if sameAddress=true
 }
 
-Note: in the response, the id will be encrypted and the password will not be shown as it will be saved only in DB. because it to be WRITE only access.
+Note: 1. In the response, the id will be encrypted and the password will not be shown as it will be saved only in DB. because it to be WRITE only access.
+
+2. Since we have implemented JWT security, we can access the other endpoints only by having the Bearer token. 
+
+The Bearer Token will be generated only when the customer registers himself via localhost:8083/customers/createCustomer endpoint, once the customer is created successfully, post that we have to use localhost:8083/login or locahost:8675/login endpoint and login using email and password in the JSON request. Then only the bearer token is generated. Copy that and when using postman select the Authorization tab, in that select the Auth Type as 'Bearer Token' and paste the value in the token section. This token will be valid for 30 minutes only.
 
 Response:
 --------

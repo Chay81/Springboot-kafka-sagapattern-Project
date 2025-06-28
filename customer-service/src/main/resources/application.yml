@@ -137,3 +137,8 @@ logging:
       httpclient:
         wiretap: true
 
+jwt:
+  secret: mysecretkey1234567890mysecretkey1234567890 # Key used to sign the token (HMAC-SHA256 key)
+  expiration: 1800000  # in milliseconds (30 minutes) Duration the token stays valid
+
+

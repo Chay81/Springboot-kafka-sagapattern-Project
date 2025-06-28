@@ -19,7 +19,7 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
-    @PostMapping
+    @PostMapping("/createCustomer")
     public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerDTO customerDTO) {
 
         log.info("Creating new customer : {}", customerDTO);
@@ -60,7 +60,7 @@ public class CustomerController {
 
         log.info("Deleting details of the customer with ID : {}", customerId);
         customerService.deleteCustomer(customerId);  // Throws exception if not found
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 }

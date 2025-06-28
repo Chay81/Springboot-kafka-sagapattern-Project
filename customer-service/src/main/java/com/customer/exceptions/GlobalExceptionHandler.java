@@ -17,10 +17,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleCustomerNotFound(CustomerNotFoundException ex) {
         Map<String, Object> errorBody = new HashMap<>();
         errorBody.put("timestamp", LocalDateTime.now());
-        errorBody.put("status", HttpStatus.NOT_FOUND.value());
-        errorBody.put("error", "Not Found");
+        errorBody.put("status", HttpStatus.NO_CONTENT.value());
+        errorBody.put("error", "No Content");
         errorBody.put("message", ex.getMessage());
-        return new ResponseEntity<>(errorBody, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(errorBody, HttpStatus.NO_CONTENT);
     }
 
     @ExceptionHandler(Exception.class)
