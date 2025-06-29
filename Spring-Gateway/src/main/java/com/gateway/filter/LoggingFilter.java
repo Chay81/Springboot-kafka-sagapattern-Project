@@ -1,4 +1,4 @@
-package com.gateway;
+package com.gateway.filter;
 
 // LoggingFilter for Centralized Logging using Prometheus and Grafana
 
