@@ -141,4 +141,13 @@ jwt:
   secret: mysecretkey1234567890mysecretkey1234567890 # Key used to sign the token (HMAC-SHA256 key)
   expiration: 1800000  # in milliseconds (30 minutes) Duration the token stays valid
 
+#  Oauth2 configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret: my-super-secret-key-1234567890abcd1234567890abcd  # use a strong 32+ char key
+
+
+
 

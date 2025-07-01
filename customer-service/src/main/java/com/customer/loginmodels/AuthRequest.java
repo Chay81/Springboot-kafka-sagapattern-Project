@@ -1,10 +1,9 @@
-package com.customer.entity;
+package com.customer.loginmodels;
 
 import lombok.Data;
 
-// Request DTO
 @Data
-public class LoginRequest {
+public class AuthRequest {
     private String email;
     private String password;
 }

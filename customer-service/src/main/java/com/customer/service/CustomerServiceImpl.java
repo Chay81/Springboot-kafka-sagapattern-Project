@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +55,10 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         assignCustomerToAddresses(customer);
+
+        //  Set default role
+//        customer.setRoles(Set.of("ROLE_CUSTOMER"));
+
         Customer saved = customerRepository.save(customer);
         return customerMapper.toDTO(saved);
     }

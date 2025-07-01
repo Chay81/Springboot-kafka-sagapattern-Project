@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private RestTemplate restTemplate;
 
+
     public Order placeOrder(Order order) {
 
         try {
@@ -44,8 +44,8 @@ public class OrderServiceImpl implements OrderService {
             // Send to Kafka topic
             kafkaTemplate.send(INVENTORY_TOPIC, savedOrder);
             log.info("Order event sent to inventory-topic");
-
             return savedOrder;
+
         } catch (Exception e) {
             log.error("Error placing order: {}", e.getMessage());
             throw new RuntimeException("Failed to place order", e);

@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "customers")
@@ -41,6 +39,12 @@ public class Customer implements Serializable{
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> shippingAddress = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "customer_roles", joinColumns = @JoinColumn(name = "customer_id"))
+    @Column(name = "role")
+    private Set<String> roles = new HashSet<>();
+
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -49,13 +53,14 @@ public class Customer implements Serializable{
                 && Objects.equals(customerId, customer.customerId)
                 && Objects.equals(customerName, customer.customerName)
                 && Objects.equals(phoneNumber, customer.phoneNumber)
+                && Objects.equals(roles, customer.roles)
                 && Objects.equals(billingAddress, customer.billingAddress)
                 && Objects.equals(shippingAddress, customer.shippingAddress);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(customerId, customerName, phoneNumber, sameAddress, billingAddress, shippingAddress);
+        return Objects.hash(customerId, customerName, phoneNumber, roles, sameAddress, billingAddress, shippingAddress);
     }
 
     @Override
@@ -64,6 +69,7 @@ public class Customer implements Serializable{
                 "customerId=" + customerId +
                 ", customerName='" + customerName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
+                ", roles='" + roles + '\'' +
                 ", sameAddress=" + sameAddress +
                 '}';
     }

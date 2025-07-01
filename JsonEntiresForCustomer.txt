@@ -1,3 +1,37 @@
+Important Note:
+--------------
+
+1. After creation of the customer, we need to use localhost:8083/login to generate token which is based on  Role_Authorization. This endpoint is only accessible
+from customer-service cannot be used from Gateway. The role have been created inside the customer class itself with the below code.
+
+@ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "customer_roles", joinColumns = @JoinColumn(name = "customer_id"))
+    @Column(name = "role")
+    private Set<String> roles = new HashSet<>();
+
+We can view the role_type in the DB table. SELECT * FROM kafka.customer_roles;
+
+Admins have to be created using sql query below:
+
+2. First create the customer 'Admin User' with the below query. If the password is like shown below, encrypt in online Bycrpt website: https://bcrypt-generator.com/ and paste the value in the password section, Like shown below.
+
+INSERT INTO customer (customer_id, customer_name, email_address, password)
+VALUES (2, 'Admin User', 'admin@example.com', '$2a$12$K2fBP030i33wcErxh0PPxeNa5n7lwIgMRre5.JTrBIo833mU8yTf6'); // password: admin@123
+
+3. Once Admin is created use customer_id and provide a role like shown below. 
+
+INSERT INTO customer_roles (customer_id, role)
+VALUES (2, 'ROLE_ADMIN');
+
+4. If using token with 'ROLE_CUSTOMER' then all the endpoints in this project will be available, except inventory-service which does not GET endpoint.
+We need 'ROLE_ADMIN' token to update the inventory, using any other token we will get 403 error. And without using token we will get 401 error.
+
+We can verify the token details and its details in the website: jwt.io. Also we can verify the duration of the token availability in this website
+
+
+EndPoints:
+----------
+
 1. Create Customer with same billing and shipping address
 ---------------------------------------------------------
 
