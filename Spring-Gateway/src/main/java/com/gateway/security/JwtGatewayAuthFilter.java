@@ -27,14 +27,6 @@ import java.security.Key;
 import java.util.List;
 
 
-/* JwtGatewayAuthFilter is a custom Global Filter in Spring Cloud Gateway (WebFlux)
-that performs centralized JWT authentication and authorization for all incoming HTTP requests.
-
-This filter ensures that:
-Only requests with a valid Bearer token are allowed to access protected microservice routes.
-Public endpoints like /login and /createCustomer remain accessible without a token.
-*/
-
 @Component
 @Slf4j
 public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
@@ -73,8 +65,6 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn(" Missing or invalid Authorization header for path: {}", path);
-//            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-//            return exchange.getResponse().setComplete();
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.UNAUTHORIZED);
         }
 
@@ -93,14 +83,10 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
         } catch (ExpiredJwtException ex) {
             log.warn("❌ Token expired: {}", ex.getMessage());
-//            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-//            return exchange.getResponse().setComplete();
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.EXPIRED_TOKEN);
 
         } catch (JwtException ex) {
             log.error("❌ Invalid JWT: {}", ex.getMessage());
-//            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-//            return exchange.getResponse().setComplete();
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.INVALID_TOKEN);
         }
 
@@ -115,8 +101,6 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                 "ROLE_CUSTOMER", "ROLE_USER", "ROLE_ADMIN", "ROLE_MANAGER")) {
 
             log.warn("⛔ Access denied to /orders for roles: {}", roles);
-//            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-//            return exchange.getResponse().setComplete();
             return buildErrorResponse(exchange, HttpStatus.FORBIDDEN, AppConstants.ACCESS_DENIED_ORDER);
         }
 
@@ -135,8 +119,6 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
                 log.warn("⛔ Access denied to modify inventory. Roles: {}", roles);
                 return buildErrorResponse(exchange, HttpStatus.FORBIDDEN, AppConstants.ACCESS_DENIED_INVENTORY);
-//                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-//                return exchange.getResponse().setComplete();
             }
         }
 
