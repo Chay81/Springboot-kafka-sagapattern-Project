@@ -66,7 +66,4 @@ public class InventoryController {
         }
         return ResponseEntity.ok(false);
     }
-
-
-
 }

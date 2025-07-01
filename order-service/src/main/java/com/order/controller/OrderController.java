@@ -1,6 +1,8 @@
 package com.order.controller;
 
+import com.order.constants.AppConstants;
 import com.order.entity.OrderStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
+@Slf4j
 public class OrderController {
 
     @Autowired
@@ -30,18 +33,22 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> placeOrder(@RequestBody Order order) {
 
+        log.info(AppConstants.INCOMING_ORDER, order);
         boolean available = orderService.checkStockAvailability(order);
 
         if (!available) {
+            Order failedOrder = orderService.placeOrder(order); // Save the failed order
+
+            log.warn(AppConstants.INVENTORY_NOT_AVAILABLE);
             order.setStatus(OrderStatus.ORDER_FAILED);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new OrderResponse("❌ Product is out of stock", order));
+                    .body(new OrderResponse(AppConstants.ORDER_FAILED, failedOrder));
         }
 
+        log.info("Stock is available. Proceeding to place order.");
         Order created = orderService.placeOrder(order);
-        OrderResponse response = new OrderResponse("Order placed and sent to Inventory Service!", created);
-        OrderResponse DLQResponse = new OrderResponse("Order failed to process in Inventory Service," +
-				" after 2 retries, sent to dead letter topic", created);
+        OrderResponse response = new OrderResponse(AppConstants.ORDER_RESPONSE, created);
+        OrderResponse DLQResponse = new OrderResponse(AppConstants.ORDER_DLQ, created);
 
         // Check if the order was successfully created, if not, return the DLQ response
         if ("fail-test".equalsIgnoreCase(order.getProductName())) {

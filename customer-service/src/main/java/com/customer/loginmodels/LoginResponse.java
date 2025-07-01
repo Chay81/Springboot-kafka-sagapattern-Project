@@ -1,4 +1,4 @@
-package com.customer.entity;
+package com.customer.loginmodels;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

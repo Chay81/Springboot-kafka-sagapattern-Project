@@ -1,5 +1,6 @@
 package com.order.listener;
 
+import com.order.constants.AppConstants;
 import com.order.entity.Order;
 import com.order.entity.OrderStatus;
 import com.order.repository.OrderRepository;
@@ -17,12 +18,14 @@ public class CompensationListener {
 
     @KafkaListener(topics = "order-compensation-topic", groupId = "order-group")
     public void handleCompensation(Order failedOrder) {
-        log.warn("🔁 Compensation triggered for order ID: {}", failedOrder.getOrderId());
+        log.warn(AppConstants.COMPENSATION, failedOrder.getOrderId());
 
         orderRepository.findByOrderId(failedOrder.getOrderId()).ifPresent(order -> {
+//          Order failed
             order.setStatus(OrderStatus.ORDER_FAILED);
             orderRepository.save(order);
-            log.info("✅ Order status updated to ORDER_FAILED for order ID: {}", order.getOrderId());
+
+            log.info(AppConstants.COMPENSATION_FAILED, order.getOrderId());
         });
     }
 }
