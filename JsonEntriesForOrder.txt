@@ -1,8 +1,19 @@
 Important Note:
 --------------
 
-1. After creation of the customer, we need to use localhost:8083/login to generate token which is based on  Role_Authorization. This endpoint is only accessible
-from customer-service cannot be used from Gateway. The role have been created inside the customer class itself with the below code.
+1. After creation of the customer, we need to use localhost:8083/login to generate token which is based on  Role_Authorization. 
+
+JsonRequest:
+-----------
+
+{
+  "email": "admin@example.com",
+  "password": "admin-password"
+}
+
+Token will be generated in the Postman Response.
+
+This endpoint is only accessible from customer-service cannot be used from Gateway. The role have been created inside the customer class itself with the below code.
 
 @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "customer_roles", joinColumns = @JoinColumn(name = "customer_id"))
