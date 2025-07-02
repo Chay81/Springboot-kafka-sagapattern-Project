@@ -8,7 +8,7 @@ JsonRequest:
 
 {
   "email": "admin@example.com",
-  "password": "admin-password"
+  "password": "admin@123"
 }
 
 Token will be generated in the Postman Response.
