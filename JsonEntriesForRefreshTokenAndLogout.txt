@@ -1,0 +1,79 @@
+Important Note:
+--------------
+
+In order to create the /login, /refreshToken and /customer/logout endpoints, we used RSA instead of AES, due to which we RSAEncrytor class and RefreshTokenScheduler for which we need place '@EnableScheduling' annotation in the main class for scheduling.
+
+For the RSAEncrytor class we need to create a public and private key, move them under src/main/resources and rename as shown below. Also the commands to create the public and private keys is given below.
+
+# Generate 2048-bit private key
+openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+
+# Extract the public key from the private key
+openssl rsa -pubout -in private.pem -out public.pem
+
+src/main/resources/
+├── public.pem
+└── private.pem
+
+After placing them under resources we need to declare them in application.yml as shown below.
++rsa:
++  public-key: classpath:public_key.pem
++  private-key: classpath:private_key.pem
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+1. Post Request for /refreshToken
+---------------------------------
+
+The json body needed for this is the refreshtoken which will be generated when the /login is trigerred, the response shown in postman for token and refreshToken as shown below.[for example]
+
+"token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb2hpdC5tZWhyYUBleGFtcGxlLmNvbSIsInJvbGVzIjpbIlJPTEVfQ1VTVE9NRVIiXSwiaWF0IjoxNzUyMjM3ODIwLCJleHAiOjE3NTIyMzk2MjB9.8_1uPdSLotBRB18OCx3a9wvb59AjWtQSZeC-l5KJMHI",
+
+"refreshToken": "72569b2b-abf5-4cf3-9d2a-617252c986a3"
+
+The refreshToken will be json body for localhost:8083/refreshToken, we need to use the token in the Authorization tab, the response for this endpoint will generate another token which can be used for 30 mins for continuing the session..below is the response in the postman.
+
+Postman Response for /refreshToken
+----------------------------------
+{
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb2hpdC5tZWhyYUBleGFtcGxlLmNvbSIsInJvbGVzIjpbIlJPTEVfQ1VTVE9NRVIiXSwiaWF0IjoxNzUyMjM3ODc4LCJleHAiOjE3NTIyMzk2Nzh9.Po-1sPwBGUtUkBAozTqlEQCpVlIDnFxE7JaiAnWhtBc",
+    "expiresAt": "2025-07-11T13:14:38.874Z",
+    "message": "Access token refreshed"
+}
+
+
+2. Post Request for /customer/logout
+------------------------------------
+
+The json body for this endpoint will be refreshToken, as explained above.
+
+If we use an invalid refreshtoken then error message in postman will be shown as refreshToken not found, we need to understand that token can be refreshed, but the refreshToken generated during /login will be same till logout.
+
+Once we use the jsonbody, and the token in Authorization tab, will be logged out from the session.
+
+We can check the same in the DB of refreshToken table in the boolean column which is expires will shown to 'true'. 
+
+The details can be found in the localhost:8083/admin/tokens/expired, this is a Get request. We need to use the same token which was generated from /login endpoint. Below is the response in postman.
+
+Postman response
+----------------
+
+{
+    "data": [
+        {
+            "id": 4,
+            "token": "sJlf4P5mBVmS9OhkIsensOebfWq8RbrnIOwdZq4pMm9N3TQRq7YT2DwaRZb7/aezSwUhd3bcrHUBNGUY5gKAH6DYxZzITSkLPs2Abn6FPWFLo0ADd+ftv4PLAeS4QDHTU8utTDVmwF7vNYBPkk36CT/by/E0iICYDWopzxAsiOZ4mVFEhtWUx9imEYjXth60hqlVs2byl5hwFB3RNmHyyRAwAQBgaMTur+fs1AcYjF0SVYc72ACorOxtXFchDBpVB3w5q2V6PxsXDdXLdzVIT8EvTtxTzuuOPlRP0oD3vUAtUJBtM/eIc+kj4+PjwoR9OR9AuI43/Z/Zl6sfmmzkWw==",
+            "rawToken": "492adb67-4f82-4dd0-9c7d-7c1a8a736375",
+            "username": "rohit.mehra@example.com",
+            "roles": [
+                "ROLE_CUSTOMER"
+            ],
+            "issuedAt": "2025-07-11T12:55:12.902Z",
+            "expiresAt": "2025-07-11T13:25:12.902Z",
+            "expired": true
+        }
+    ],
+    "count": 1
+}

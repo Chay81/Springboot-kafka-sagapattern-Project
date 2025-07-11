@@ -141,6 +141,10 @@ jwt:
   secret: mysecretkey1234567890mysecretkey1234567890 # Key used to sign the token (HMAC-SHA256 key)
   expiration: 1800000  # in milliseconds (30 minutes) Duration the token stays valid
 
+rsa:
+  public-key: classpath:public_key.pem
+  private-key: classpath:private_key.pem
+
 #  Oauth2 configuration
   security:
     oauth2:

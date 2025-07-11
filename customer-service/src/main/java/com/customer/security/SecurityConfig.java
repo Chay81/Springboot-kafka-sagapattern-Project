@@ -34,12 +34,13 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/customers/createCustomer", "/login").permitAll()
+                        .requestMatchers("/customers/createCustomer", "/login", "/refreshToken").permitAll()
                         .requestMatchers("/customers/**").hasRole("CUSTOMER") // Role-based check
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
 
