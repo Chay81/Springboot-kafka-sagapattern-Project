@@ -57,6 +57,7 @@ then the endpoint will be localhost:8765/customers/createCustomer
   "emailAddress": "rohit.mehra@example.com",
   "password": "rohit@123",
   "sameAddress": true,
+  "roles":["ROLE_CUSTOMER"], // OR ROLE_ADMIN	
   "billingAddress": [
     {
       "apartmentName": "Sky Towers",
@@ -85,6 +86,7 @@ Response:
     "phoneNumber": "9876543210",
     "emailAddress": "rohit.mehra@example.com",
     "sameAddress": true,
+    
     "billingAddress": [
         {
             "addressId": 19,
@@ -129,6 +131,7 @@ JSON request
   "emailAddress": "neha.verma@example.com",
   "password": "neha@123",
   "sameAddress": false,
+  "roles":["ROLE_CUSTOMER"], // OR ROLE_ADMIN
   "billingAddress": [
     {
       "apartmentName": "Golden Heights",

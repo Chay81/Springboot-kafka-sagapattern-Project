@@ -1,5 +1,6 @@
 package com.customer.entity;
 
+import com.customer.DTO.CustomerDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -7,7 +8,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class CustomerResponse {
         private String message;
-        private Customer customer;
+        private CustomerDTO customer;
 
     public CustomerResponse(String message) {
     }

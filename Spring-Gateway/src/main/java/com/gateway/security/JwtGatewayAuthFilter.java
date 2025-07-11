@@ -120,6 +120,13 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                 log.warn("⛔ Access denied to modify inventory. Roles: {}", roles);
                 return buildErrorResponse(exchange, HttpStatus.FORBIDDEN, AppConstants.ACCESS_DENIED_INVENTORY);
             }
+
+            if (path.startsWith("/admin") && !hasAllowedRole(roles, "ROLE_ADMIN")) {
+                log.warn("Access denied: Only ROLE_ADMIN can access admin endpoints");
+                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                return exchange.getResponse().setComplete();
+            }
+
         }
 
 
