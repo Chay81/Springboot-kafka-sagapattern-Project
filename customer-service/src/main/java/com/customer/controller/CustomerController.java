@@ -5,6 +5,7 @@ import com.customer.constants.AppConstants;
 import com.customer.entity.CustomerResponse;
 import com.customer.repository.CustomerRepository;
 import com.customer.service.CustomerService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -87,36 +86,51 @@ public class CustomerController {
 
 
     @GetMapping("/{customerId}")
-    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long customerId) {
+    public ResponseEntity<CustomerDTO> getCustomerById(
+            @PathVariable Long customerId,
+            @RequestHeader("X-Authenticated-Email") String authenticatedEmail,
+            @RequestHeader("X-Authenticated-Roles") String roleHeader
+    ) {
+        Set<String> roles = Arrays.stream(roleHeader.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
 
-        log.info("Details of the customer with ID : {}", customerId);
-        CustomerDTO existingCustomer = customerService.getCustomerById(customerId);
+        log.info("🔍 Getting customer by ID: {} for user: {}", customerId, authenticatedEmail);
+        CustomerDTO existingCustomer = customerService.getCustomerById(customerId, authenticatedEmail, roles);
         return ResponseEntity.status(HttpStatus.OK).body(existingCustomer);
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers(
+            @RequestHeader("X-Authenticated-Email") String authenticatedEmail,
+            @RequestHeader("X-Authenticated-Roles") String roleHeader
+    ) {
+        Set<String> roles = Arrays.stream(roleHeader.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
 
-        log.info("Details of all the customers:");
-        return ResponseEntity.ok(customerService.getAllCustomers());
+        log.info("📥 Getting customers for user: {}", authenticatedEmail);
+        List<CustomerDTO> customers = customerService.getAllCustomers(authenticatedEmail, roles);
+        return ResponseEntity.status(HttpStatus.OK).body(customers);
     }
 
     @PutMapping("/{customerId}")
     public ResponseEntity<CustomerDTO> updateCustomer(
             @PathVariable Long customerId,
-            @RequestBody CustomerDTO customerDTO
+            @RequestBody CustomerDTO customerDTO,
+            HttpServletRequest request
     ) {
         log.info("Updating customer details : {}  with ID {}", customerDTO, customerId);
-        CustomerDTO updatedCustomer = customerService.updateCustomer(customerId, customerDTO);
+        CustomerDTO updatedCustomer = customerService.updateCustomer(customerId, customerDTO, request);
         return ResponseEntity.status(HttpStatus.OK).body(updatedCustomer);
     }
 
     @DeleteMapping("/{customerId}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long customerId) {
-
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long customerId, HttpServletRequest request) {
         log.info("Deleting details of the customer with ID : {}", customerId);
-        customerService.deleteCustomer(customerId);  // Throws exception if not found
+        customerService.deleteCustomer(customerId, request);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
 
 }

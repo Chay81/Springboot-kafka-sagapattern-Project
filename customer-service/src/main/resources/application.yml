@@ -103,6 +103,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.loadbalancer: DEBUG
+    org.springframework.security: DEBUG
     root: INFO
     com.order: DEBUG
 

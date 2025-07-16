@@ -1,0 +1,93 @@
+
+Why emailAddress is included in ServerHttpRequest
+-------------------------------------------------
+
+We are ensuring that:
+
+1. **Only authenticated customers** can place, view, update, or delete their own orders.
+2. Orders are **automatically associated** with the customer’s email from the JWT (extracted and injected by Gateway).
+3. This keeps `order-service` **independent of customer-service**, while still secure and traceable.
+
+We **do not trust clients (like Postman or frontend)** to send the customer's email.
+Instead, we **extract the email from the JWT at the API Gateway**, inject it into the request as a header (`X-Authenticated-Email`), and let the downstream `order-service` use that **injected header** to set the `emailAddress` on the order — internally, without needing the frontend or Postman to supply it.
+
+This way, we **guarantee**:
+
+* The user is authenticated ✅
+* The `emailAddress` used in the order is verified ✅
+* The order is traceable to the correct user ✅
+
+---
+
+### ✅ 1. The Request Flow
+
+```text
+Frontend / Postman
+   |
+   | (No need to include emailAddress)
+   ↓
+[API Gateway]
+   └─ Parses JWT token
+   └─ Extracts "emailAddress" claim
+   └─ Injects X-Authenticated-Email: <user@example.com> into the request header
+   ↓
+[Order-Service]
+   └─ Receives order request
+   └─ Reads email from "X-Authenticated-Email"
+   └─ Sets that as order.emailAddress during persistence
+```
+
+---
+
+
+### ✅ 3. Why this is better than joins
+
+| Criteria                  | Using `emailAddress` in `Order` (as above) | Joining with `Customer`              |
+| ------------------------- | ------------------------------------------ | ------------------------------------ |
+| Microservice independence | ✅ Fully decoupled                          | ❌ Requires shared DB or API calls    |
+| Security                  | ✅ Trusted, secure from JWT                 | ❌ Risky if relying on frontend input |
+| Real-time resolution      | ✅ Injected by Gateway, per request         | ❌ Requires DB lookup or service call |
+| Simplicity                | ✅ Only one DB operation in order-service   | ❌ Requires cross-service logic       |
+| Performance               | ✅ Fast write                               | ❌ Slower, higher latency             |
+
+---
+
+## 🚫 Don’t Let Frontend Provide Identity
+
+Imagine this request:
+
+```json
+POST /orders/place
+{
+  "productName": "iPhone",
+  "quantity": 2,
+  "emailAddress": "admin@example.com"  <-- 🚨 User can tamper this
+}
+```
+
+Without using JWT headers, the user can **impersonate** anyone.
+
+But when the Gateway injects the verified email, the user **cannot forge identity**, and your `order-service` is protected even from rogue clients.
+
+---
+
+## 🧪 Testing in Postman
+
+In Postman:
+
+* You log in from `/login`, get a JWT
+* Include JWT in the Authorization header: `Bearer <your-token>`
+* **DO NOT** add `emailAddress` in the request body
+* The Gateway injects `X-Authenticated-Email` from the JWT and the system handles it end-to-end securely
+
+---
+
+## ✅ Conclusion
+
+So to answer your concern:
+
+> "How does the system know which customer placed the order?"
+
+👉 **It doesn’t rely on the client.**
+👉 It **relies on the Gateway to inject the verified customer email** (from the JWT), so the downstream service (like order-service) receives that context without ever asking the user for it.
+

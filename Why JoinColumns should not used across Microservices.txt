@@ -1,0 +1,85 @@
+### ❌ Why we **can’t/shouldn’t use `@JoinColumn`** (i.e., JPA relationships) **in Microservices**:
+
+In **monolithic applications**, we often define relationships like this:
+
+```java
+@ManyToOne
+@JoinColumn(name = "customer_id")
+private Customer customer;
+```
+
+But in **microservices**, this becomes **dangerous and unscalable**. Here’s why:
+
+---
+
+### 🚫 1. **Tight Coupling of Services**
+
+Using `@JoinColumn` assumes that:
+
+* The **foreign entity class (e.g., `Customer`) exists locally**, and
+* The **DB schema is shared**.
+
+In microservices:
+
+* Services like `order-service` and `customer-service` have **separate databases**.
+* You can’t/shouldn’t access `Customer` entity from `order-service`.
+
+✅ **Microservices = decentralized DB + no shared models**.
+
+---
+
+### 🚫 2. **Cross-DB Joins Don’t Work**
+
+Each microservice owns its **own database**.
+
+* JPA `@JoinColumn` expects a **relational join**, which only works in the same DB.
+* Microservices typically use **separate DBs per service** → **joins across services = not possible**.
+
+---
+
+### 🚫 3. **Breaks Service Autonomy**
+
+If `order-service` uses `@JoinColumn` to link to `Customer`, it:
+
+* Becomes **dependent on the structure of `customer-service`**.
+* **Violates the bounded context** → any schema change in `customer-service` might break `order-service`.
+
+---
+
+### 🚫 4. **Hard to Scale or Migrate**
+
+You can't:
+
+* Scale each DB independently.
+* Switch one service’s DB engine (say to NoSQL) without breaking others.
+
+---
+
+### ✅ What to do instead?
+
+Use **IDs only** and **remote lookup** via:
+
+#### 1. **Storing foreign keys as plain fields**
+
+```java
+private Long customerId;
+private String customerEmail;
+```
+
+#### 2. **Calling the other service (if needed)**
+
+* Use **REST** or **Kafka** to fetch full customer details if necessary.
+* Or **denormalize** and store basic customer info inside order DB (snapshot pattern).
+
+---
+
+### 🔁 Summary
+
+| `@JoinColumn` in Microservices | Why Not                        | What to Use Instead     |
+| ------------------------------ | ------------------------------ | ----------------------- |
+| Requires local entity          | Breaks service boundaries      | Just store the ID/email |
+| Needs shared DB schema         | Microservices use separate DBs | REST/Kafka for lookups  |
+| Adds tight coupling            | Limits autonomy & flexibility  | Denormalize or use DTOs |
+
+
+

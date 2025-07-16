@@ -20,6 +20,8 @@ After placing them under resources we need to declare them in application.yml as
 +  public-key: classpath:public_key.pem
 +  private-key: classpath:private_key.pem
 
+Also, JwtAuthenticationFilter class and public class JwtUtil class in customer-service are important even though we have defined them in Spring Gateway because without Spring Security will reject /refreshToken, /customer/logout due to no permissions.
+
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -27,11 +29,23 @@ After placing them under resources we need to declare them in application.yml as
 1. Post Request for /refreshToken
 ---------------------------------
 
-The json body needed for this is the refreshtoken which will be generated when the /login is trigerred, the response shown in postman for token and refreshToken as shown below.[for example]
+The json body needed for this is the refreshtoken and AuthRequest which will be generated when the /login is trigerred, the response shown in postman for token and refreshToken as shown below.[for example]
 
 "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyb2hpdC5tZWhyYUBleGFtcGxlLmNvbSIsInJvbGVzIjpbIlJPTEVfQ1VTVE9NRVIiXSwiaWF0IjoxNzUyMjM3ODIwLCJleHAiOjE3NTIyMzk2MjB9.8_1uPdSLotBRB18OCx3a9wvb59AjWtQSZeC-l5KJMHI",
 
 "refreshToken": "72569b2b-abf5-4cf3-9d2a-617252c986a3"
+
+JsonRequest
+-----------
+
+{
+    "refreshToken": "0e45ddd1-1421-4e16-bb45-9f0b24032bbf",
+    "authRequest": {
+    "email": "rohit.mehra@example.com",
+    "password": "rohit@123"
+  }
+}
+
 
 The refreshToken will be json body for localhost:8083/refreshToken, we need to use the token in the Authorization tab, the response for this endpoint will generate another token which can be used for 30 mins for continuing the session..below is the response in the postman.
 

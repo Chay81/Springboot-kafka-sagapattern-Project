@@ -1,25 +1,21 @@
 package com.order.controller;
 
 import com.order.constants.AppConstants;
+import com.order.entity.Order;
+import com.order.entity.OrderResponse;
 import com.order.entity.OrderStatus;
+import com.order.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.order.entity.Order;
-import com.order.entity.OrderResponse;
-import com.order.service.OrderService;
-
-import lombok.RequiredArgsConstructor;
-
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/orders")
@@ -31,8 +27,11 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> placeOrder(@RequestBody Order order) {
+    public ResponseEntity<OrderResponse> placeOrder(
+                        @RequestBody Order order,
+                        @RequestHeader("X-Authenticated-Email") String authenticatedEmail) {
 
+        order.setEmailAddress(authenticatedEmail); // Associate with logged-in customer
         log.info(AppConstants.INCOMING_ORDER, order);
         boolean available = orderService.checkStockAvailability(order);
 
@@ -60,15 +59,36 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrder(@PathVariable Long orderId) {
-        return ResponseEntity.ok(orderService.getByOrderId(orderId));
+    public ResponseEntity<Order> getOrder(
+            @PathVariable Long orderId,
+            @RequestHeader("X-Authenticated-Email") String authenticatedEmail,
+            @RequestHeader("X-Authenticated-Roles") String roleHeader
+    ) {
+        Set<String> roles = Arrays.stream(roleHeader.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        log.info("Fetching order ID: {} for user: {}", orderId, authenticatedEmail);
+        Order order = orderService.getByOrderId(orderId, authenticatedEmail, roles);
+
+        return ResponseEntity.status(HttpStatus.OK).body(order);
     }
+
 
     @GetMapping("/product/{productName}")
-    public ResponseEntity <List<Order>> getProductOrders(@PathVariable String productName) {
-        return ResponseEntity.ok(orderService.getStockOrders(productName));
+    public ResponseEntity<List<Order>> getProductOrders(
+            @PathVariable String productName,
+            @RequestHeader("X-Authenticated-Email") String authenticatedEmail,
+            @RequestHeader("X-Authenticated-Roles") String roleHeader
+    ) {
+        Set<String> roles = Arrays.stream(roleHeader.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        log.info("Fetching orders for product '{}' by user '{}'", productName, authenticatedEmail);
+        List<Order> orders = orderService.getProductOrders(productName, authenticatedEmail, roles);
+
+        return ResponseEntity.status(HttpStatus.OK).body(orders);
     }
-
-
 
 }

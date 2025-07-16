@@ -29,5 +29,9 @@ public class CustomerDTO {
     private List<AddressDTO> billingAddress;
     private List<AddressDTO> shippingAddress;
     private List<String> roles; // Optional: Will default to ROLE_CUSTOMER
+
+    private String newPassword;
+    private String retypePassword;
+
 }
 

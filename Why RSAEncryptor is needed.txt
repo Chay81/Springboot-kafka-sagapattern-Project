@@ -1,0 +1,64 @@
+
+### 🔍 **Purpose of `RSAEncryptor`**
+
+The `RSAEncryptor` class is used to **securely encrypt and decrypt refresh tokens** in your application using **asymmetric RSA encryption**. This ensures that even if your database is compromised, the refresh tokens stored in it are unreadable without the private key.
+
+---
+
+### ✅ **Why is this helpful?**
+
+1. **🛡️ Security**:
+   Refresh tokens are sensitive. If someone steals a raw token from your DB, they could impersonate a user. By encrypting it with **RSA**, you store a scrambled version of it in the DB, which can only be decrypted with the private key (not stored in DB).
+
+2. **🔒 Asymmetric Encryption Advantage**:
+
+   * Public key: Used to encrypt.
+   * Private key: Used to decrypt.
+   * Even if someone accesses your code or `.jar`, as long as the private key is safe, your tokens remain secure.
+
+3. **🧠 Separation of Concerns**:
+   It encapsulates encryption logic in one place — no crypto logic scattered around your app. Makes your system more modular and easier to test/maintain.
+
+---
+
+### ⚙️ **How it works internally**
+
+* **On startup** (`@PostConstruct`):
+
+  * Loads your RSA public and private keys from `classpath:/public_key.pem` and `private_key.pem`.
+  * Converts them to usable Java `PublicKey` and `PrivateKey` objects.
+
+* **When encrypting** (`encrypt()`):
+
+  * Takes a string (refresh token like UUID), encrypts it with the **public key**, and returns a base64 encoded string.
+
+* **When decrypting** (`decrypt()`):
+
+  * Takes the encrypted base64 string from DB, decodes and decrypts it with the **private key**, and returns the original UUID.
+
+---
+
+### 📈 Efficiency
+
+RSA is computationally heavier than symmetric encryption (like AES), but you're using it **only for short strings (UUIDs)** and **only on login/logout/refresh**, so:
+
+* **Very efficient in your case** (tiny data, infrequent usage).
+* **Does not block or bottleneck request throughput**.
+* Ideal trade-off between security and performance.
+
+If you were encrypting large payloads, then symmetric keys (e.g., AES with an RSA-wrapped key) would be better. But for UUID refresh tokens, RSA is perfect.
+
+---
+
+### 📌 Summary
+
+| ✅ Benefit                  | 🚀 Explanation                                             |
+| -------------------------- | ---------------------------------------------------------- |
+| **Secure Refresh Tokens**  | Protects tokens even if DB is leaked                       |
+| **Asymmetric Design**      | Public key for encrypt, private key for decrypt            |
+| **Clean Abstraction**      | Keeps cryptographic logic out of controller/service layers |
+| **Efficient for Use Case** | Lightweight enough for short strings like UUIDs            |
+
+---
+
+

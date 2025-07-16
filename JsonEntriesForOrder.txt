@@ -66,9 +66,10 @@ Response in postman:
 {
     "message": "Order placed and sent to Inventory Service!",
     "order": {
-        "orderId": 35,
+        "orderId": 78,
+        "emailAddress": "rohit.mehra@example.com",
         "productName": "laptop",
-        "quantity": 30,
+        "quantity": 10,
         "price": 20000.0,
         "brandName": "Lenovo",
         "modelNumber": "14B",
@@ -88,7 +89,8 @@ Response:
 --------
 
 {
-    "orderId": 34,
+    "orderId": 78,
+    "emailAddress": "rohit.mehra@example.com",
     "productName": "laptop",
     "quantity": 10,
     "price": 20000.0,
