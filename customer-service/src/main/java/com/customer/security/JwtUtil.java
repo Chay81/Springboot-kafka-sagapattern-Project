@@ -38,12 +38,16 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
+        final Claims claims = parseToken(token);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    private Claims parseToken(String token) {
         return Jwts
                 .parserBuilder()
                 .setSigningKey(key)
@@ -61,10 +65,6 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
 
@@ -76,7 +76,6 @@ public class JwtUtil {
         claims.put("roles", roles);
         return createToken(claims, userDetails.getUsername());
     }
-
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts

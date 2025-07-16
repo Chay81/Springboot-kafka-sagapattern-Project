@@ -1,0 +1,28 @@
+
+Why refreshToken is used for logout
+-----------------------------------
+
+for a secure **logout mechanism in JWT-based authentication**, you should use **only the `refreshToken`**, **not the JWT access token**.
+
+---
+
+### ✅ Why use only the `refreshToken` for logout?
+
+| Reason                                      | Explanation                                                                           |
+| ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 🔒 **JWT is stateless**                     | You can't revoke a JWT once issued — it’s valid until it expires.                     |
+| 🔐 **Refresh tokens are stored in the DB**  | You can look them up, mark them as expired, delete them, etc.                         |
+| 📋 **Access tokens don’t need logout**      | They're short-lived and will naturally expire. No server tracking is possible.        |
+| 🛡️ **Refresh token is the session anchor** | If it’s revoked, the user can’t get a new access token, effectively logging them out. |
+
+---
+
+
+### ✅ Server-side logic
+
+* Decrypt the refresh token (if encrypted).
+* Look it up in `refresh_token` table.
+* Mark it as `expired = true` or delete it.
+
+---
+

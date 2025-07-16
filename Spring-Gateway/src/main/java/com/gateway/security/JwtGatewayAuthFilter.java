@@ -1,6 +1,7 @@
 package com.gateway.security;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gateway.constants.AppConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -14,6 +15,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.List;
+import java.util.Map;
 
 
 @Component
@@ -41,12 +44,6 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Define public endpoints here
-    private final List<String> publicEndpoints = List.of(
-            "/customers/createCustomer",
-            "/login"
-    );
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -56,7 +53,7 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
         log.info("Incoming request path: {}", path);
 
         // Step 1: Bypass public endpoints
-        if (publicEndpoints.stream().anyMatch(path::startsWith)) {
+        if (AppConstants.PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith)) {
             log.info(" Public endpoint '{}', skipping JWT filter", path);
             return chain.filter(exchange);
         }
@@ -80,6 +77,18 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                     .getBody();
 
             log.info(" Token valid. Granting access to {}", path);
+            String emailAddress = claims.get("emailAddress", String.class);
+            List<String> roles = claims.get("roles", List.class);
+
+            // Inject email into request header for downstream services
+            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                    .header("X-Authenticated-Email", emailAddress)
+                    .header("X-Authenticated-Roles", String.join(",", roles))
+                    .build();
+
+            // Use the mutated request in the exchange
+            exchange = exchange.mutate().request(mutatedRequest).build();
+
 
         } catch (ExpiredJwtException ex) {
             log.warn("❌ Token expired: {}", ex.getMessage());
@@ -88,6 +97,11 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
         } catch (JwtException ex) {
             log.error("❌ Invalid JWT: {}", ex.getMessage());
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.INVALID_TOKEN);
+        }
+
+        // for forgot password
+        if (request.getURI().getPath().contains("/customers/forgotPassword")) {
+            return chain.filter(exchange); // 🔓 Skip auth for forgot password
         }
 
 
@@ -129,9 +143,52 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
         }
 
+        // Validate that the customer can only update their own data by matching emailAddress with their token in JWT vs request body
+        ObjectMapper objectMapper = new ObjectMapper();
 
-        // Step 5: Forward to next filter in chain
+        if (path.startsWith("/customers") &&
+                (HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod) || HttpMethod.DELETE.equals(httpMethod))) {
+
+            ServerWebExchange finalExchange = exchange;
+            return DataBufferUtils.join(exchange.getRequest().getBody())
+                    .flatMap(dataBuffer -> {
+                        byte[] bodyBytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bodyBytes);
+                        DataBufferUtils.release(dataBuffer);
+
+                        try {
+                            String bodyString = new String(bodyBytes, StandardCharsets.UTF_8);
+                            Map<String, Object> requestBodyMap = objectMapper.readValue(bodyString, Map.class);
+
+                            String emailFromBody = (String) requestBodyMap.get("emailAddress");
+                            String emailFromToken = finalExchange.getRequest().getHeaders().getFirst("X-Authenticated-Email");
+
+                            if (emailFromToken != null && emailFromBody != null &&
+                                    !emailFromToken.equalsIgnoreCase(emailFromBody)) {
+
+                                log.warn("⛔ Email mismatch! Token={} vs Body={}", emailFromToken, emailFromBody);
+                                return buildErrorResponse(finalExchange, HttpStatus.FORBIDDEN, "Unauthorized to modify another customer's data.");
+                            }
+
+                            // Rebuild request with original body
+                            ServerHttpRequest mutatedRequest = finalExchange.getRequest().mutate()
+                                    .header("X-Authenticated-Email", emailFromToken)
+                                    .build();
+
+                            DataBuffer newBody = finalExchange.getResponse().bufferFactory().wrap(bodyBytes);
+                            ServerWebExchange mutatedExchange = finalExchange.mutate().request(mutatedRequest).build();
+
+                            return chain.filter(mutatedExchange);
+                        } catch (Exception e) {
+                            log.error("❌ Failed to parse request body for ownership check", e);
+                            return buildErrorResponse(finalExchange, HttpStatus.BAD_REQUEST, "Invalid request body.");
+                        }
+                    });
+        }
+
+// Default for all other routes
         return chain.filter(exchange);
+
     }
 
     private boolean hasAllowedRole(List<String> roles, String... allowedRoles) {

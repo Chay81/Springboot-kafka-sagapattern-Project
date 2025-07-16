@@ -1,23 +1,17 @@
 package com.order.service;
 
-import java.util.List;
-import java.util.Optional;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
-
 import com.order.entity.Order;
-import com.order.repository.OrderRepository;
+
+import java.util.List;
+import java.util.Set;
 
 public interface OrderService {
 
-	public Order placeOrder(Order order);
+	Order placeOrder(Order order);
 
-	public Order getByOrderId(Long orderId);
+	Order getByOrderId(Long orderId, String emailAddress, Set<String> roles);
 
-	List<Order> getStockOrders(String productName);
+	List<Order> getProductOrders(String productName, String emailAddress, Set<String> roles);
 
 	boolean checkStockAvailability(Order order);
 }

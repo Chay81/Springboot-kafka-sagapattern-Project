@@ -24,8 +24,8 @@ spring:
         - id: customer-service
           uri: lb://CUSTOMER-SERVICE
           predicates:
-            - Path=/customers/**
-
+            - Path=/customers/**, /login, /customer/forgotPassword, /customer/logout, /refreshToken, /admin/tokens/expired
+            - Method=GET,POST,PUT,PATCH
       default-filters:
         - name: RequestRateLimiter
           args:

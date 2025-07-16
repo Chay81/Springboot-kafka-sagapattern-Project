@@ -9,10 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -52,18 +55,36 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    public Order getByOrderId(Long orderId) {
-    log.info("Retrieving order with ID: {}", orderId);
-        return orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID : " + orderId));
+    public Order getByOrderId(Long orderId, String emailAddress, Set<String> roles) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
+        // 🔐 Only admins or owners can access the order
+        if (!roles.contains("ROLE_ADMIN") && !emailAddress.equalsIgnoreCase(order.getEmailAddress())) {
+            throw new AccessDeniedException("You are not authorized to view this order.");
+        }
+
+        return order;
     }
 
+
     @Override
-    public List<Order> getStockOrders(String productName) {
+    public List<Order> getProductOrders(String productName, String emailAddress, Set<String> roles) {
+        log.info("📦 Retrieving orders for product: {}", productName);
         List<Order> orders = orderRepository.findByProductName(productName);
         if (orders.isEmpty()) {
             throw new ResourceNotFoundException("No orders found for the order : " + productName);
+        }
+
+        // 🔐 If not admin, filter only the orders placed by this user
+        if (!roles.contains("ROLE_ADMIN")) {
+            orders = orders.stream()
+                    .filter(order -> emailAddress.equalsIgnoreCase(order.getEmailAddress()))
+                    .collect(Collectors.toList());
+
+            if (orders.isEmpty()) {
+                throw new AccessDeniedException("You are not authorized to view orders for this product.");
+            }
         }
         return orders;
     }

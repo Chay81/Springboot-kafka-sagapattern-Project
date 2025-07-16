@@ -1,0 +1,85 @@
+---
+
+### 🔍 **Purpose of `RefreshTokenScheduler`**
+
+This scheduled task runs **every hour** and:
+
+* **Finds** refresh tokens that are either:
+
+  * ✅ Marked as `expired = true`, or
+  * 🕑 Expired based on the `expiresAt` timestamp.
+* **Deletes** those tokens from the database.
+
+---
+
+### ✅ **Why is this helpful?**
+
+| 🔧 Concern                    | 💡 How the Scheduler Solves It                       |
+| ----------------------------- | ---------------------------------------------------- |
+| **Database bloat**            | Keeps DB from growing indefinitely with stale tokens |
+| **Security risk**             | Deletes tokens that should no longer be usable       |
+| **Compliance/auditing**       | Helps in enforcing token retention policies          |
+| **Cleaner token reuse logic** | Avoids dealing with old/conflicting refresh tokens   |
+
+---
+
+### 🛠️ **How it works internally**
+
+1. **Frequency**:
+
+   ```java
+   @Scheduled(fixedRate = 60 * 60 * 1000)
+   ```
+
+   Runs **once every hour**, no matter how long the last execution took.
+
+2. **Query logic**:
+
+   ```java
+   refreshTokenRepository.findByExpiredTrueOrExpiresAtBefore(now);
+   ```
+
+   This JPA query will return:
+
+   * Any token explicitly marked as `expired = true` (maybe via logout).
+   * Or any token where the `expiresAt` timestamp is **before** the current time.
+
+3. **Deletion**:
+   If the result list is not empty, it calls:
+
+   ```java
+   refreshTokenRepository.deleteAll(expiredTokens);
+   ```
+
+---
+
+### 🔐 Security Perspective
+
+* Tokens beyond their validity are **useless** and should be removed to avoid:
+
+  * Accidental misuse.
+  * Reprocessing old tokens due to bugs.
+* Also useful when revoking refresh tokens (e.g. on logout): the scheduler ensures they get purged cleanly.
+
+---
+
+### 🚀 Efficiency Perspective
+
+* The query is **index-friendly** on `expired` and `expiresAt`, so very fast.
+* Deletes happen in bulk (`deleteAll()`), minimizing DB roundtrips.
+* Runs in the background thread, so it doesn’t block user traffic.
+
+---
+
+### 📌 Summary
+
+| 🔍 Feature                   | ✅ Value                                      |
+| ---------------------------- | -------------------------------------------- |
+| **Scheduled cleanup**        | Runs every hour automatically                |
+| **Lightweight + efficient**  | Fast query + batch delete                    |
+| **Security improvement**     | Removes expired or explicitly revoked tokens |
+| **Improves maintainability** | Prevents token duplication or bloating       |
+
+---
+
+

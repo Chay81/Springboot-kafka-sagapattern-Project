@@ -22,6 +22,8 @@ public class Customer implements Serializable{
     private Long customerId;
 
     private String customerName;
+
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
 
     @Column(nullable = false, unique = true)

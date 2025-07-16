@@ -47,9 +47,7 @@ EndPoints:
 ---------------------------------------------------------
 
 POST Request to create a customer
-endpoint: localhost:8083/customers/createCustomer
-if spring gateway is used
-then the endpoint will be localhost:8765/customers/createCustomer
+the endpoint will be localhost:8765/customers/createCustomer
 
 {
   "customerName": "Rohit Mehra",
@@ -118,8 +116,6 @@ Response:
 -----------------------------------------
 
 POST Request to create a customer
-endpoint: localhost:8083/customers
-if spring gateway is used
 then the endpoint will be localhost:8765/customers
 
 JSON request
@@ -195,8 +191,6 @@ Response:
 -------------------
 
 PUT Request to update a customer phoneNumber, password and emailAddress
-endpoint: localhost:8083/customers/9
-if spring gateway is used
 then the endpoint will be localhost:8765/customers/9
 
 Json Request
@@ -269,8 +263,6 @@ Response:
 ---------------------
 
 Example: if the customer id is 6
-then endpoint will be localhost:8083/customers/6
-if spring gateway is used
 then the endpoint will be localhost:8765/customers/6
 
 Response:
@@ -313,8 +305,6 @@ Response:
 ---------------------
 
 Example: for this endpoint no arguments will be needed
-then endpoint will be localhost:8083/customers
-if spring gateway is used
 then the endpoint will be localhost:8765/customers
 
 Response:
@@ -392,8 +382,6 @@ Response:
 ------------------------
 
 Example: if the customer id is 6
-then endpoint will be localhost:8083/customers/9
-if spring gateway is used
 then the endpoint will be localhost:8765/customers/9
 
 Response:
