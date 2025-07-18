@@ -54,7 +54,7 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
         // Step 1: Bypass public endpoints
         if (AppConstants.PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith)) {
-            log.info(" Public endpoint '{}', skipping JWT filter", path);
+            log.info("Public endpoint '{}', skipping JWT filter", path);
             return chain.filter(exchange);
         }
 
@@ -76,7 +76,7 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                     .parseClaimsJws(token)
                     .getBody();
 
-            log.info(" Token valid. Granting access to {}", path);
+            log.info("Token valid. Granting access to {}", path);
             String emailAddress = claims.get("emailAddress", String.class);
             List<String> roles = claims.get("roles", List.class);
 
@@ -91,18 +91,18 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
 
         } catch (ExpiredJwtException ex) {
-            log.warn("❌ Token expired: {}", ex.getMessage());
+            log.warn(AppConstants.EXPIRED_TOKEN, ex.getMessage());
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.EXPIRED_TOKEN);
 
         } catch (JwtException ex) {
-            log.error("❌ Invalid JWT: {}", ex.getMessage());
+            log.error(AppConstants.INVALID_TOKEN, ex.getMessage());
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.INVALID_TOKEN);
         }
 
         // for forgot password
-        if (request.getURI().getPath().contains("/customers/forgotPassword")) {
-            return chain.filter(exchange); // 🔓 Skip auth for forgot password
-        }
+//        if (request.getURI().getPath().contains("/customer/forgotPassword")) {
+//            return chain.filter(exchange); // 🔓 Skip auth for forgot password
+//        }
 
 
         // Step 3: Extract roles

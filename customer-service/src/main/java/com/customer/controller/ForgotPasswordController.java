@@ -5,6 +5,7 @@ import com.customer.DTO.ForgotPasswordRequestDTO;
 import com.customer.entity.CustomerResponse;
 import com.customer.entity.PasswordResponse;
 import com.customer.security.ForgotPasswordHandler;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class ForgotPasswordController {
     private ForgotPasswordHandler forgotPasswordHandler;
 
     @PatchMapping("/forgotPassword")
-    public ResponseEntity<PasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequestDTO passwordRequestDTO) {
+    public ResponseEntity<PasswordResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequestDTO passwordRequestDTO) {
         PasswordResponse response = forgotPasswordHandler.resetPassword(passwordRequestDTO);
 
         if (response.isSuccess()) {

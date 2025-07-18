@@ -22,6 +22,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,7 +95,7 @@ public class AuthServiceImpl implements AuthService{
         return Map.of(
                 "message", "Login successful",
                 "token", token,
-                "expiresAt", Instant.ofEpochMilli(expiryTime).toString(),
+                "expiresAt", formatToISTString(Instant.ofEpochMilli(expiryTime)),
                 "refreshToken", rawRefreshToken
         );
     }
@@ -139,7 +142,7 @@ public class AuthServiceImpl implements AuthService{
         return Map.of(
                 "message", "Access token refreshed",
                 "token", newJwt,
-                "expiresAt", Instant.ofEpochMilli(now + jwtExpirationInMs).toString()
+                "expiresAt", formatToISTString(Instant.ofEpochMilli(now + jwtExpirationInMs))
         );
     }
 
@@ -162,5 +165,10 @@ public class AuthServiceImpl implements AuthService{
         return refreshTokenRepository.findByRawToken(rawToken);
     }
 
+    // 🔁 IST Time Formatter
+    private String formatToISTString(Instant instant) {
+        ZonedDateTime istTime = instant.atZone(ZoneId.of("Asia/Kolkata"));
+        return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(istTime);
+    }
 }
 

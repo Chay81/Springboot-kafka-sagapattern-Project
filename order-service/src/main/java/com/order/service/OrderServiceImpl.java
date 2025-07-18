@@ -1,13 +1,15 @@
 package com.order.service;
 
+import com.order.DTO.OrderRequestDTO;
+import com.order.constants.AppConstants;
 import com.order.entity.Order;
 import com.order.entity.OrderStatus;
 import com.order.exceptions.ResourceNotFoundException;
+import com.order.client.InventoryClient;
 import com.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -33,21 +35,46 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private InventoryClient inventoryClient;
 
-    public Order placeOrder(Order order) {
+    public Order placeOrder(OrderRequestDTO orderRequestDTO, String emailAddress) {
 
         try {
-            log.info("Placing order: {}", order);
+            log.info("Placing order: {}", orderRequestDTO);
 
-//          placing order
+            // 🏗️ Map DTO to Entity
+            Order order = Order.builder()
+                    .productName(orderRequestDTO.getProductName())
+                    .quantity(orderRequestDTO.getQuantity())
+                    .price(orderRequestDTO.getPrice())
+                    .brandName(orderRequestDTO.getBrandName())
+                    .modelNumber(orderRequestDTO.getModelNumber())
+                    .emailAddress(emailAddress) // Associate with logged-in customer
+                    .build();
+            boolean available = checkStockAvailability(order);
+
+            if (!available) {
+                Order failedOrder = orderRepository.save(order);
+                log.warn(AppConstants.INVENTORY_NOT_AVAILABLE);
+                order.setStatus(OrderStatus.ORDER_FAILED);
+
+                // Still send failed order to Kafka
+                kafkaTemplate.send(INVENTORY_TOPIC, failedOrder);
+                log.info("📤 Sent failed order to Kafka");
+
+                return failedOrder;
+            }
+
+//          // Normal successful order flow
             order.setStatus(OrderStatus.ORDER_PLACED);
-            Order savedOrder = orderRepository.save(order);
-            log.info("Order saved: {}", savedOrder);
+            Order placedOrder  = orderRepository.save(order);
+            log.info("Order saved: {}", placedOrder );
 
             // Send to Kafka topic
-            kafkaTemplate.send(INVENTORY_TOPIC, savedOrder);
+            kafkaTemplate.send(INVENTORY_TOPIC, placedOrder );
             log.info("Order event sent to inventory-topic");
-            return savedOrder;
+            return placedOrder;
 
         } catch (Exception e) {
             log.error("Error placing order: {}", e.getMessage());
@@ -95,19 +122,37 @@ public class OrderServiceImpl implements OrderService {
         * and sends a GET request to the Inventory Service to check if the stock is available.
         * If the stock is available, it returns true; otherwise, it returns false.
     * */
+
     @Override
     public boolean checkStockAvailability(Order order) {
-
-        log.info("Checking stock availability for order: {}", order);
-        String url = "http://localhost:8082/inventory/check?brand=" + order.getBrandName() +
-                "&model=" + order.getModelNumber() + "&quantity=" + order.getQuantity();
+        log.info("Checking stock availability using FeignClient for order: {}", order);
 
         try {
-            ResponseEntity<Boolean> response = restTemplate.getForEntity(url, Boolean.class);
-            return Boolean.TRUE.equals(response.getBody());
+            return inventoryClient.isStockAvailable(
+                    order.getBrandName(),
+                    order.getModelNumber(),
+                    order.getQuantity()
+            );
         } catch (Exception e) {
-            log.error("Inventory check failed: {}", e.getMessage());
+            log.error("Feign call to inventory-service failed: {}", e.getMessage());
             return false;
         }
     }
+
+
+//    @Override
+//    public boolean checkStockAvailability(Order order) {
+//
+//        log.info("Checking stock availability for order: {}", order);
+//        String url = "http://localhost:8082/inventory/check?brand=" + order.getBrandName() +
+//                "&model=" + order.getModelNumber() + "&quantity=" + order.getQuantity();
+//
+//        try {
+//            ResponseEntity<Boolean> response = restTemplate.getForEntity(url, Boolean.class);
+//            return Boolean.TRUE.equals(response.getBody());
+//        } catch (Exception e) {
+//            log.error("Inventory check failed: {}", e.getMessage());
+//            return false;
+//        }
+//    }
 }

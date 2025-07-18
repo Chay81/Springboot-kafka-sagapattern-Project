@@ -21,7 +21,6 @@ public class CompensationListener {
         log.warn(AppConstants.COMPENSATION, failedOrder.getOrderId());
 
         orderRepository.findByOrderId(failedOrder.getOrderId()).ifPresent(order -> {
-//          Order failed
             order.setStatus(OrderStatus.ORDER_FAILED);
             orderRepository.save(order);
 

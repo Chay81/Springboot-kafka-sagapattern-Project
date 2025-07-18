@@ -1,6 +1,8 @@
 package com.inventory.service;
 
+import com.inventory.DTO.CreateInventoryRequestDTO;
 import com.inventory.entity.Inventory;
+import com.inventory.entity.InventoryResponse;
 import com.inventory.exceptions.ResourceNotFoundException;
 import com.inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,23 +70,63 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public Inventory createStock(Inventory inventory) {
+    public InventoryResponse createInventory(CreateInventoryRequestDTO requestDTO) {
 
-        log.info("Creating or updating inventory for brand: {}, model: {}", inventory.getBrandName(), inventory.getModelNumber());
+        log.info("Creating or updating inventory for brand: {}, model: {}", requestDTO.getBrandName(), requestDTO.getModelNumber());
 
         Optional<Inventory> existingInventory = inventoryRepository
-                .findByBrandNameAndModelNumber(inventory.getBrandName(), inventory.getModelNumber());
+                .findByBrandNameAndModelNumber(requestDTO.getBrandName(), requestDTO.getModelNumber());
+
+        Inventory inventory;
+        String message;
 
         if (existingInventory.isPresent()) {
             Inventory existing = existingInventory.get();
-            existing.setStock(existing.getStock() + inventory.getStock()); // ✅ Add stock
-            existing.setPrice(inventory.getPrice());
-            log.info(" Existing inventory updated: {}", existing);
-            return inventoryRepository.save(existing);
-        } else {
-            log.info(" New inventory created: {}", inventory);
-            return inventoryRepository.save(inventory);
-        }
+            existing.setStock(existing.getStock() + requestDTO.getStock()); // ✅ Add stock
+            existing.setPrice(requestDTO.getPrice());
 
+            inventory = inventoryRepository.save(existing);
+            message = "Inventory already exists, stock updated";
+            log.info("Existing inventory updated: {}", inventory);
+        } else {
+            inventory = Inventory.builder()
+                    .productName(requestDTO.getProductName())
+                    .brandName(requestDTO.getBrandName())
+                    .modelNumber(requestDTO.getModelNumber())
+                    .price(requestDTO.getPrice())
+                    .stock(requestDTO.getStock())
+                    .build();
+
+            inventory = inventoryRepository.save(inventory);
+            message = "Inventory created successfully!";
+            log.info("New inventory created: {}", inventory);
+        }
+        return InventoryResponse.builder()
+                .message(message)
+                .productName(inventory.getProductName())
+                .brandName(inventory.getBrandName())
+                .modelNumber(inventory.getModelNumber())
+                .price(inventory.getPrice())
+                .stock(inventory.getStock())
+                .build();
     }
+
+    @Override
+    public boolean isStockAvailable(String brandName, String modelNumber, int quantity) {
+        return inventoryRepository.findByBrandNameAndModelNumber(brandName, modelNumber)
+                .map(inventory -> hasSufficientStock(inventory, quantity))
+                .orElse(false);
+    }
+
+    private boolean hasSufficientStock(Inventory inventory, int requiredQuantity) {
+        boolean available = inventory.getStock() >= requiredQuantity;
+
+        if (!available) {
+            log.warn("❌ Insufficient stock: available={}, required={}", inventory.getStock(), requiredQuantity);
+        } else {
+            log.info("✅ Sufficient stock available: {}", inventory.getStock());
+        }
+        return available;
+    }
+
 }
