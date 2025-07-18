@@ -2,6 +2,7 @@ package com.order.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.io.Serializable;
@@ -22,13 +23,27 @@ public class Order implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;
 
+    @NotBlank(message = "Email address is required")
+    @Email(message = "Invalid email format")
     @Column(nullable = false)
     private String emailAddress; // Added: To track which customer placed the order
 
+    @NotBlank(message = "Product name is required")
+    @Size(max = 100, message = "Product name must not exceed 100 characters")
     private String productName;
+
+    @Positive(message = "Quantity must be greater than 0")
     private int quantity;
+
+    @PositiveOrZero(message = "Price cannot be negative")
     private double price;
+
+    @NotBlank(message = "Brand name is required")
+    @Size(max = 100, message = "Brand name must not exceed 100 characters")
     private String brandName;
+
+    @NotBlank(message = "Model number is required")
+    @Size(max = 100, message = "Model number must not exceed 100 characters")
     private String modelNumber;
 
     @Enumerated(EnumType.STRING)

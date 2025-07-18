@@ -28,4 +28,3 @@ public class DLQListener {
         log.info("↩️ Compensation event sent for order ID: {}", failedOrder.getOrderId());
     }
 }
-

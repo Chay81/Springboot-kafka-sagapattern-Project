@@ -10,6 +10,9 @@ server:
 eureka:
   instance:
     hostname: localhost
+    metadata-map:
+      allowUnsafeSerialization: false  # 🔒 Prevent deserialization attacks
+
   client:
     register-with-eureka: false
     fetch-registry: false
@@ -17,3 +20,7 @@ eureka:
       wait-time-in-ms-when-sync-empty: 0
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  server:
+    wait-time-in-ms-when-sync-empty: 0
+    enable-self-preservation: true
+    renewal-percent-threshold: 0.85   # 🔐 Prevent cascading failures

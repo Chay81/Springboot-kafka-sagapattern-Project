@@ -11,12 +11,12 @@ spring:
     name: inventory-service
 
 # route configuration
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
+#  cloud:
+#    gateway:
+#      discovery:
+#        locator:
+#          enabled: true
+#          lower-case-service-id: true # this complete configuration is not needed as instance for this service is registered in spring gateway
 
   jpa:
     hibernate:
@@ -97,6 +97,7 @@ info:
 logging:
   level:
     org.springframework.kafka: INFO
+    org.apache.kafka: WARN
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
     org.springframework.cloud.loadbalancer: DEBUG

@@ -6,6 +6,7 @@ import com.customer.entity.CustomerResponse;
 import com.customer.repository.CustomerRepository;
 import com.customer.service.CustomerService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class CustomerController {
     // Allowed roles (to avoid abuse)
 
     @PostMapping("/createCustomer")
-    public ResponseEntity<CustomerResponse> createCustomer(@RequestBody CustomerDTO customerDTO) {
+    public ResponseEntity<CustomerResponse> createCustomer(@RequestBody @Valid CustomerDTO customerDTO) {
 
         // Check if both email and phone already exist together
         if (customerRepository.findByEmailAddressAndPhoneNumber(
@@ -117,7 +118,7 @@ public class CustomerController {
     @PutMapping("/{customerId}")
     public ResponseEntity<CustomerDTO> updateCustomer(
             @PathVariable Long customerId,
-            @RequestBody CustomerDTO customerDTO,
+            @RequestBody @Valid CustomerDTO customerDTO,
             HttpServletRequest request
     ) {
         log.info("Updating customer details : {}  with ID {}", customerDTO, customerId);
@@ -131,6 +132,4 @@ public class CustomerController {
         customerService.deleteCustomer(customerId, request);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
-
 }

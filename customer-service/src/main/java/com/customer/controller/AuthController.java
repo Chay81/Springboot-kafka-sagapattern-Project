@@ -5,6 +5,7 @@ import com.customer.entity.RefreshToken;
 import com.customer.loginmodels.AuthRequest;
 import com.customer.service.AuthService;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Transactional
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@RequestBody @Valid AuthRequest request) {
 
         log.info("Inside login method of AuthController");
         try {
@@ -37,13 +38,13 @@ public class AuthController {
         } catch (AuthenticationException ex) {
             log.info("Outside login method of AuthController");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Unauthorized", "message", "Invalid credentials"));
+                    .body(Map.of("error", "Unauthorized", "message", "Email or password do not match"));
         }
     }
 
     @PostMapping("/refreshToken")
     public ResponseEntity<?> refreshToken(
-            @RequestBody RefreshTokenFullRequestDTO request,
+            @RequestBody @Valid RefreshTokenFullRequestDTO request,
             @RequestHeader("X-Authenticated-Email") String authenticatedEmail) {
 
         try {

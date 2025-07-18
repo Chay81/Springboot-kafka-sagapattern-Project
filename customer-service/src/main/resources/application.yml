@@ -11,12 +11,12 @@ spring:
     name: customer-service
 
   # route configuration
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
+#  cloud:
+#    gateway:
+#      discovery:
+#        locator:
+#          enabled: true
+  #          lower-case-service-id: true # this complete configuration is not needed as instance for this service is registered in spring gateway
 
 
   # JPA configuration

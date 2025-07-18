@@ -1,6 +1,8 @@
 package com.inventory.service;
 
+import com.inventory.DTO.CreateInventoryRequestDTO;
 import com.inventory.entity.Inventory;
+import com.inventory.entity.InventoryResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,5 +15,7 @@ public interface InventoryService {
 
     List<Inventory> getProducts(String productName);
 
-    Inventory createStock(Inventory inventory);
+    InventoryResponse createInventory(CreateInventoryRequestDTO requestDTO);
+
+    boolean isStockAvailable(String brandName, String modelNumber, int quantity);
 }

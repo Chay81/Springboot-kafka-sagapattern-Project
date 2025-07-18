@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,11 +38,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AppConstants.PUBLIC_PATHS).permitAll()
+                        .requestMatchers("/actuator/prometheus").permitAll() // ✅ Allow Prometheus to scrape without auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/actuator/**").hasRole("ADMIN") // 🔐 Admin-only actuator
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")    // 🔒 Secure other actuator endpoints
                         .anyRequest().hasRole("CUSTOMER")
                 )
                 .exceptionHandling(exception -> exception

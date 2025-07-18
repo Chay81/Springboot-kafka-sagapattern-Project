@@ -1,20 +1,24 @@
 package com.inventory.controller;
 
+import com.inventory.DTO.CreateInventoryRequestDTO;
 import com.inventory.entity.Inventory;
 import com.inventory.entity.InventoryResponse;
 import com.inventory.exceptions.ResourceNotFoundException;
 import com.inventory.repository.InventoryRepository;
 import com.inventory.service.InventoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
+@Validated
 @RestController
 @RequestMapping("/inventory")
 @RequiredArgsConstructor
@@ -41,29 +45,19 @@ public class InventoryController {
     }
 
     @PostMapping
-    public ResponseEntity<InventoryResponse> createInventory(@RequestBody Inventory inventory) {
+    public ResponseEntity<InventoryResponse> createInventory(@RequestBody @Valid CreateInventoryRequestDTO requestDTO) {
 
-        log.info(" Creating inventory for: {}", inventory);
-        Optional<Inventory> existing = inventoryService.getStock(inventory.getBrandName(), inventory.getModelNumber());
-
-        Inventory createdInventory = inventoryService.createStock(inventory);
-
-        // check if the inventory already exists, if inventory exists, return the existedInventory response else create a new inventory and return the response
-        InventoryResponse response = existing.isPresent()
-                ? new InventoryResponse("Inventory already exists, stock updated", createdInventory)
-                : new InventoryResponse("Inventory created successfully!", createdInventory);
-
+        log.info("🎯 Creating inventory via controller: {}", requestDTO);
+        InventoryResponse response = inventoryService.createInventory(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> isStockAvailable(@RequestParam String brand,
-                                                    @RequestParam String model,
+    public ResponseEntity<Boolean> isStockAvailable(@RequestParam String brandName,
+                                                    @RequestParam String modelNumber,
                                                     @RequestParam int quantity) {
-        Optional<Inventory> inventoryOpt = inventoryRepository.findByBrandNameAndModelNumber(brand, model);
-        if (inventoryOpt.isPresent()) {
-            return ResponseEntity.ok(inventoryOpt.get().getStock() >= quantity);
-        }
-        return ResponseEntity.ok(false);
+        log.info("🔍 Checking stock availability for brand={}, model={}, quantity={}", brandName, modelNumber, quantity);
+        boolean isAvailable = inventoryService.isStockAvailable(brandName, modelNumber, quantity);
+        return ResponseEntity.ok(isAvailable);
     }
 }

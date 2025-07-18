@@ -58,7 +58,7 @@ public class KafkaConsumerConfig {
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2));
         errorHandler.setRetryListeners((record, ex, attempt) -> {
-            System.out.println("🔁 Retry #" + attempt + ": " + record.value());
+            log.info("🔁 Retry #{}: {}", attempt, record.value());
         });
 
         factory.setCommonErrorHandler(errorHandler);
