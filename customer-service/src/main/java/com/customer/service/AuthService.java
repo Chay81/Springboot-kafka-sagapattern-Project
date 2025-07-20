@@ -2,15 +2,16 @@ package com.customer.service;
 
 import com.customer.entity.RefreshToken;
 import com.customer.loginmodels.AuthRequest;
+import com.customer.loginmodels.AuthResponse;
 
 import java.util.Map;
 import java.util.Optional;
 
 public interface AuthService {
 
-    Map<String, String> login(AuthRequest request);
+    AuthResponse login(AuthRequest request);
 
-    Map<String, String> refreshToken(String rawToken, AuthRequest authRequest);
+    AuthResponse refreshToken(String rawToken, AuthRequest authRequest);
 
     void logout(String rawToken);
 
