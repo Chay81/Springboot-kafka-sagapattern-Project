@@ -10,12 +10,14 @@ import com.customer.mapper.AddressMapper;
 import com.customer.mapper.CustomerMapper;
 import com.customer.repository.AddressRepository;
 import com.customer.repository.CustomerRepository;
+import com.customer.util.DataMaskingUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -52,17 +54,17 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
 
         if (sameAddress) {
-            List<Address> copied = copyAddresses(customer.getBillingAddress(), AddressType.SHIPPING);
+            List<Address> copied = copyAddress(customer.getBillingAddress(), AddressType.SHIPPING);
             customer.setShippingAddress(copied);
         }
 
-        assignCustomerToAddresses(customer);
-
-        //  Set default role
-//        customer.setRoles(Set.of("ROLE_CUSTOMER"));
+        assignCustomerToAddress(customer);
 
         Customer saved = customerRepository.save(customer);
-        return customerMapper.toDTO(saved);
+//      Masking emailAddress and phoneNumber in api response
+//      return customerMapper.toDTO(saved);
+        return maskSensitiveData(customerMapper.toDTO(saved));
+
     }
 
     @Override
@@ -78,24 +80,9 @@ public class CustomerServiceImpl implements CustomerService {
             throw new AccessDeniedException("You are not authorized to view this customer's data.");
         }
 
-        List<Address> allAddresses = addressRepository.findByCustomer(customer);
-
-        customer.setBillingAddress(
-                allAddresses.stream()
-                        .filter(a -> a.getAddressType() == AddressType.BILLING)
-                        .collect(Collectors.toList())
-        );
-
-        customer.setShippingAddress(
-                allAddresses.stream()
-                        .filter(a -> a.getAddressType() == AddressType.SHIPPING)
-                        .collect(Collectors.toList())
-        );
-
-        return customerMapper.toDTO(customer);
+        hydrateAddresses(customer);
+        return maskSensitiveData(customerMapper.toDTO(customer));
     }
-
-
 
     @Override
     public List<CustomerDTO> getAllCustomers(String authenticatedEmail, Set<String> roles) {
@@ -103,48 +90,29 @@ public class CustomerServiceImpl implements CustomerService {
         // ✅ Admins see all customers
         if (roles.contains("ROLE_ADMIN")) {
             List<Customer> customers = customerRepository.findAll();
-            for (Customer customer : customers) {
-                List<Address> allAddresses = addressRepository.findByCustomer(customer);
-
-                customer.setBillingAddress(
-                        allAddresses.stream()
-                                .filter(a -> a.getAddressType() == AddressType.BILLING)
-                                .collect(Collectors.toList())
-                );
-
-                customer.setShippingAddress(
-                        allAddresses.stream()
-                                .filter(a -> a.getAddressType() == AddressType.SHIPPING)
-                                .collect(Collectors.toList())
-                );
-            }
+            customers.forEach(this::hydrateAddresses);
 
             return customers.stream()
                     .map(customerMapper::toDTO)
                     .collect(Collectors.toList());
+
         }
 
         // ✅ Non-admins only get their own info
-        Customer customer = customerRepository.findByEmailAddress(authenticatedEmail)
+        String actualEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Actual customer email: {}", actualEmail);
+
+        // 🔓 Unmask only for internal DB matching
+        String unmaskedEmail = DataMaskingUtil.unmaskEmail(authenticatedEmail, actualEmail);
+        log.info("Unmasked customer email: {}", unmaskedEmail);
+        log.info("Unmasked customer email: {}", authenticatedEmail);
+
+        Customer customer = customerRepository.findByEmailAddress(unmaskedEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found for email: " + authenticatedEmail));
 
-        List<Address> allAddresses = addressRepository.findByCustomer(customer);
-
-        customer.setBillingAddress(
-                allAddresses.stream()
-                        .filter(a -> a.getAddressType() == AddressType.BILLING)
-                        .collect(Collectors.toList())
-        );
-
-        customer.setShippingAddress(
-                allAddresses.stream()
-                        .filter(a -> a.getAddressType() == AddressType.SHIPPING)
-                        .collect(Collectors.toList())
-        );
-
-        return List.of(customerMapper.toDTO(customer));
+        hydrateAddresses(customer);
+        return List.of(maskSensitiveData(customerMapper.toDTO(customer)));
     }
-
 
     @Override
     public CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, HttpServletRequest request) {
@@ -163,27 +131,10 @@ public class CustomerServiceImpl implements CustomerService {
         existing.setPhoneNumber(updatedCustomerDTO.getPhoneNumber());
         existing.setEmailAddress(updatedCustomerDTO.getEmailAddress());
 
-        // Update and re-encrypt password
-        if (updatedCustomerDTO.getNewPassword() != null && !updatedCustomerDTO.getNewPassword().isBlank()) {
-            String newPassword = updatedCustomerDTO.getNewPassword();
-            String retypePassword = updatedCustomerDTO.getRetypePassword();
-
-            if (!newPassword.equals(retypePassword)) {
-                throw new IllegalArgumentException(AppConstants.PASSWORD_MISMATCH);
-            }
-
-            if (!newPassword.matches(AppConstants.ALPHANUMERIC_CHARACTERS)) {
-                throw new IllegalArgumentException(AppConstants.PASSWORD_FAIL_8_CHARACTERS);
-            }
-
-            if (passwordEncoder.matches(newPassword, existing.getPassword())) {
-                throw new IllegalArgumentException(AppConstants.PASSWORD_OLD_MATCH);
-            }
-
-            existing.setPassword(passwordEncoder.encode(newPassword));
-        }
+        handlePasswordUpdate(existing, updatedCustomerDTO);
 
         boolean sameAddress = updatedCustomerDTO.isSameAddress();
+
         List<Address> billingAddress = updatedCustomerDTO.getBillingAddress()
                 .stream().map(addressMapper::toEntity).collect(Collectors.toList());
 
@@ -230,7 +181,8 @@ public class CustomerServiceImpl implements CustomerService {
         existing.getShippingAddress().addAll(shippingAddress);
 
         Customer updated = customerRepository.save(existing);
-        return customerMapper.toDTO(updated);
+
+        return maskSensitiveData(customerMapper.toDTO(updated));
     }
 
 
@@ -249,8 +201,7 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.delete(customer);
     }
 
-
-    private void assignCustomerToAddresses(Customer customer) {
+    private void assignCustomerToAddress(Customer customer) {
 
         log.info(" Assigning address with customer Id : {}", customer.getCustomerId());
         customer.getBillingAddress().forEach(address -> {
@@ -266,7 +217,7 @@ public class CustomerServiceImpl implements CustomerService {
         });
     }
 
-    private List<Address> copyAddresses(List<Address> original, AddressType type) {
+    private List<Address> copyAddress(List<Address> original, AddressType type) {
 
         log.info(" Copying address with customer Id ");
         List<Address> copied = new ArrayList<>();
@@ -286,4 +237,44 @@ public class CustomerServiceImpl implements CustomerService {
         return copied;
     }
 
+    // 🔄 Utility to hydrate billing and shipping addresses
+    private void hydrateAddresses(Customer customer) {
+        List<Address> all = addressRepository.findByCustomer(customer);
+        customer.setBillingAddress(filterAddresses(all, AddressType.BILLING));
+        customer.setShippingAddress(filterAddresses(all, AddressType.SHIPPING));
+    }
+
+    private List<Address> filterAddresses(List<Address> addresses, AddressType type) {
+        return addresses.stream()
+                .filter(a -> a.getAddressType() == type)
+                .collect(Collectors.toList());
+    }
+
+    private void handlePasswordUpdate(Customer existing, CustomerDTO dto) {
+        if (dto.getNewPassword() == null || dto.getNewPassword().isBlank()) return;
+
+        String newPassword = dto.getNewPassword();
+        String retypePassword = dto.getRetypePassword();
+
+        if (!newPassword.equals(retypePassword)) {
+            throw new IllegalArgumentException(AppConstants.PASSWORD_MISMATCH);
+        }
+
+        if (!newPassword.matches(AppConstants.ALPHANUMERIC_CHARACTERS)) {
+            throw new IllegalArgumentException(AppConstants.PASSWORD_FAIL_8_CHARACTERS);
+        }
+
+        if (passwordEncoder.matches(newPassword, existing.getPassword())) {
+            throw new IllegalArgumentException(AppConstants.PASSWORD_OLD_MATCH);
+        }
+
+        existing.setPassword(passwordEncoder.encode(newPassword));
+    }
+
+    // ✅ Central masking utility
+    private CustomerDTO maskSensitiveData(CustomerDTO dto) {
+        dto.setEmailAddress(DataMaskingUtil.maskEmail(dto.getEmailAddress()));
+        dto.setPhoneNumber(DataMaskingUtil.maskPhone(dto.getPhoneNumber()));
+        return dto;
+    }
 }

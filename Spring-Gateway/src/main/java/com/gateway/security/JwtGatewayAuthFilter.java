@@ -99,12 +99,6 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
             return buildErrorResponse(exchange, HttpStatus.UNAUTHORIZED, AppConstants.INVALID_TOKEN);
         }
 
-        // for forgot password
-//        if (request.getURI().getPath().contains("/customer/forgotPassword")) {
-//            return chain.filter(exchange); // 🔓 Skip auth for forgot password
-//        }
-
-
         // Step 3: Extract roles
         List<String> roles = claims.get("roles", List.class);
         log.info(" Role '{}' matched for path '{}'", roles, path);

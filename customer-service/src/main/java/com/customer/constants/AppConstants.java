@@ -25,4 +25,13 @@ public class AppConstants {
 
     public static final String PASSWORD_SUCCESS = "Password updated successfully.";
 
+    public static final String HMACSHA256 = "HmacSHA256";
+
+    public static final String INVALID_REFRESHTOKEN= "Invalid refresh token";
+
+    public static final String REFRESH_TOKEN_USER = "Refresh token does not belong to this user";
+
+    public static final String REFRESH_TOKEN_EXPIRY = "Refresh token expired";
+
+    public static final String TOKEN_NOT_BELONG_USER= "Token does not belong to the authenticated user";
 }

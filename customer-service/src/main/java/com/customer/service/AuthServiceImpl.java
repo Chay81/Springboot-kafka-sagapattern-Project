@@ -1,9 +1,14 @@
 package com.customer.service;
 
+import com.customer.constants.AppConstants;
+import com.customer.entity.Customer;
 import com.customer.entity.RefreshToken;
 import com.customer.loginmodels.AuthRequest;
+import com.customer.loginmodels.AuthResponse;
+import com.customer.repository.CustomerRepository;
 import com.customer.repository.RefreshTokenRepository;
-import com.customer.util.RSAEncryptor;
+import com.customer.util.DataMaskingUtil;
+import com.customer.security.RSAEncryptor;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +45,9 @@ public class AuthServiceImpl implements AuthService{
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
     private RSAEncryptor rsaEncryptor;
 
     @Value("${jwt.secret}")
@@ -50,7 +58,7 @@ public class AuthServiceImpl implements AuthService{
 
     private static final long REFRESH_TOKEN_EXPIRY_MS = 30 * 60 * 1000;
 
-    public Map<String, String> login(AuthRequest request) {
+    public AuthResponse login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
@@ -61,15 +69,19 @@ public class AuthServiceImpl implements AuthService{
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toCollection(HashSet::new));
 
+        Customer customer = customerRepository.findByEmailAddress(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException(AppConstants.CUSTOMER_NOT_FOUND));
+
         long now = System.currentTimeMillis();
         long expiryTime = now + jwtExpirationInMs;
 
-        SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), AppConstants.HMACSHA256);
 
         String token = Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .claim("roles", roles)
                 .claim("emailAddress", userDetails.getUsername())
+                .claim("phoneNumber", customer.getPhoneNumber())
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expiryTime))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -92,58 +104,71 @@ public class AuthServiceImpl implements AuthService{
 
         refreshTokenRepository.save(refreshTokenEntity);
 
-        return Map.of(
-                "message", "Login successful",
-                "token", token,
-                "expiresAt", formatToISTString(Instant.ofEpochMilli(expiryTime)),
-                "refreshToken", rawRefreshToken
-        );
+        return AuthResponse.builder()
+                .message("Login successful")
+                .token(token)
+                .expiresAt(formatToISTString(Instant.ofEpochMilli(expiryTime)))
+                .refreshToken(rawRefreshToken)
+//               Masking emailAddress and phoneNumber in Response
+                .emailAddress(DataMaskingUtil.maskEmail(customer.getEmailAddress()))
+                .phoneNumber(DataMaskingUtil.maskPhone(customer.getPhoneNumber()))
+                .build();
     }
 
-    public Map<String, String> refreshToken(
+    public AuthResponse refreshToken(
             String rawToken, AuthRequest authRequest) {
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
+        Customer customer = customerRepository.findByEmailAddress(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException(AppConstants.CUSTOMER_NOT_FOUND));
+
         Optional<RefreshToken> optionalToken = refreshTokenRepository.findByRawToken(rawToken);
 
         if (optionalToken.isEmpty()) {
-            throw new RuntimeException("Invalid refresh token");
+            throw new RuntimeException(AppConstants.INVALID_REFRESHTOKEN);
         }
 
         RefreshToken token = optionalToken.get();
 
         // 🔐 Ownership validation: ensure token belongs to the authenticated user
         if (!token.getUsername().equals(userDetails.getUsername())) {
-            throw new RuntimeException("Refresh token does not belong to this user");
+            throw new RuntimeException(AppConstants.REFRESH_TOKEN_USER);
         }
 
         if (token.isExpired() || token.getExpiresAt().isBefore(Instant.now())) {
             token.setExpired(true);
             refreshTokenRepository.save(token);
-            throw new RuntimeException("Refresh token expired");
+            throw new RuntimeException(AppConstants.REFRESH_TOKEN_EXPIRY);
         }
 
         long now = System.currentTimeMillis();
-        SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        long expiryTime = now + jwtExpirationInMs;
+
+        SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), AppConstants.HMACSHA256);
 
         String newJwt = Jwts.builder()
                 .setSubject(token.getUsername())
                 .claim("roles", token.getRoles())
                 .claim("emailAddress", userDetails.getUsername())
+                .claim("phoneNumber", customer.getPhoneNumber())
                 .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + jwtExpirationInMs))
+                .setExpiration(new Date(expiryTime))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        return Map.of(
-                "message", "Access token refreshed",
-                "token", newJwt,
-                "expiresAt", formatToISTString(Instant.ofEpochMilli(now + jwtExpirationInMs))
-        );
+        return AuthResponse.builder()
+                .message("Access token refreshed")
+                .token(newJwt)
+                .expiresAt(formatToISTString(Instant.ofEpochMilli(expiryTime)))
+//               Masking emailAddress and phoneNumber
+                .emailAddress(DataMaskingUtil.maskEmail(customer.getEmailAddress()))
+                .phoneNumber(DataMaskingUtil.maskPhone(customer.getPhoneNumber()))
+                .build();
     }
 
     public void logout(String rawToken) {
@@ -152,7 +177,7 @@ public class AuthServiceImpl implements AuthService{
             // ❗️Prevent one user from logging out another user's session
             String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
             if (!token.getUsername().equals(currentUsername)) {
-                throw new RuntimeException("Token does not belong to the authenticated user");
+                throw new RuntimeException(AppConstants.TOKEN_NOT_BELONG_USER);
             }
 
             token.setExpired(true);

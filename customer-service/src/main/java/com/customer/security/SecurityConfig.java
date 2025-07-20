@@ -44,7 +44,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/prometheus").permitAll() // ✅ Allow Prometheus to scrape without auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/**").hasRole("ADMIN")    // 🔒 Secure other actuator endpoints
-                        .anyRequest().hasRole("CUSTOMER")
+//                        .anyRequest().hasRole("CUSTOMER")
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(accessDeniedHandler)

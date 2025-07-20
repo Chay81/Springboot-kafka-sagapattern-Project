@@ -1,5 +1,7 @@
 package com.customer.DTO;
 
+import com.customer.entity.Customer;
+import com.customer.util.DataMaskingUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
@@ -58,5 +60,9 @@ public class CustomerDTO {
     @Size(min = 8, max = 100, message = "Retyped password must be between 8 and 100 characters")
     private String retypePassword;
 
+    public CustomerDTO(Customer customer) {
+        this.emailAddress = DataMaskingUtil.maskEmail(customer.getEmailAddress());
+        this.phoneNumber = DataMaskingUtil.maskPhone(customer.getPhoneNumber());
+    }
 }
 

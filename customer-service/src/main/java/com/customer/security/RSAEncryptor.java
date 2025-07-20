@@ -1,4 +1,4 @@
-package com.customer.util;
+package com.customer.security;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
