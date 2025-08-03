@@ -1,11 +1,11 @@
 package com.order.service;
 
 import com.order.DTO.OrderRequestDTO;
+import com.order.client.InventoryClient;
 import com.order.constants.AppConstants;
 import com.order.entity.Order;
 import com.order.entity.OrderStatus;
 import com.order.exceptions.ResourceNotFoundException;
-import com.order.client.InventoryClient;
 import com.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,6 +74,7 @@ public class OrderServiceImpl implements OrderService {
             // Send to Kafka topic
             kafkaTemplate.send(INVENTORY_TOPIC, placedOrder );
             log.info("Order event sent to inventory-topic");
+            log.info("Order Status is: {}", placedOrder.getStatus());
             return placedOrder;
 
         } catch (Exception e) {
@@ -140,19 +141,19 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-//    @Override
-//    public boolean checkStockAvailability(Order order) {
-//
-//        log.info("Checking stock availability for order: {}", order);
-//        String url = "http://localhost:8082/inventory/check?brand=" + order.getBrandName() +
-//                "&model=" + order.getModelNumber() + "&quantity=" + order.getQuantity();
-//
-//        try {
-//            ResponseEntity<Boolean> response = restTemplate.getForEntity(url, Boolean.class);
-//            return Boolean.TRUE.equals(response.getBody());
-//        } catch (Exception e) {
-//            log.error("Inventory check failed: {}", e.getMessage());
-//            return false;
-//        }
-//    }
+    /* @Override
+    public boolean checkStockAvailability(Order order) {
+
+        log.info("Checking stock availability for order: {}", order);
+        String url = "http://localhost:8082/inventory/check?brand=" + order.getBrandName() +
+                "&model=" + order.getModelNumber() + "&quantity=" + order.getQuantity();
+
+        try {
+            ResponseEntity<Boolean> response = restTemplate.getForEntity(url, Boolean.class);
+            return Boolean.TRUE.equals(response.getBody());
+        } catch (Exception e) {
+            log.error("Inventory check failed: {}", e.getMessage());
+            return false;
+        }
+    } */
 }

@@ -7,8 +7,8 @@ import com.customer.loginmodels.AuthRequest;
 import com.customer.loginmodels.AuthResponse;
 import com.customer.repository.CustomerRepository;
 import com.customer.repository.RefreshTokenRepository;
-import com.customer.util.DataMaskingUtil;
 import com.customer.security.RSAEncryptor;
+import com.customer.util.DataMaskingUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
@@ -80,8 +80,8 @@ public class AuthServiceImpl implements AuthService{
         String token = Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .claim("roles", roles)
-                .claim("emailAddress", userDetails.getUsername())
-                .claim("phoneNumber", customer.getPhoneNumber())
+                .claim("emailAddress",rsaEncryptor.encrypt(userDetails.getUsername()))
+                .claim("phoneNumber", rsaEncryptor.encrypt(customer.getPhoneNumber()))
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expiryTime))
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -154,8 +154,8 @@ public class AuthServiceImpl implements AuthService{
         String newJwt = Jwts.builder()
                 .setSubject(token.getUsername())
                 .claim("roles", token.getRoles())
-                .claim("emailAddress", userDetails.getUsername())
-                .claim("phoneNumber", customer.getPhoneNumber())
+                .claim("emailAddress",rsaEncryptor.encrypt(userDetails.getUsername()))
+                .claim("phoneNumber", rsaEncryptor.encrypt(customer.getPhoneNumber()))
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expiryTime))
                 .signWith(key, SignatureAlgorithm.HS256)

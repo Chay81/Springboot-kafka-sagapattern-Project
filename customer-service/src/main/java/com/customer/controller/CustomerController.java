@@ -5,7 +5,6 @@ import com.customer.constants.AppConstants;
 import com.customer.entity.CustomerResponse;
 import com.customer.repository.CustomerRepository;
 import com.customer.service.CustomerService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,17 +118,17 @@ public class CustomerController {
     public ResponseEntity<CustomerDTO> updateCustomer(
             @PathVariable Long customerId,
             @RequestBody @Valid CustomerDTO customerDTO,
-            HttpServletRequest request
+            @RequestHeader("X-Authenticated-Email") String authenticatedEmail
     ) {
         log.info("Updating customer details : {}  with ID {}", customerDTO, customerId);
-        CustomerDTO updatedCustomer = customerService.updateCustomer(customerId, customerDTO, request);
+        CustomerDTO updatedCustomer = customerService.updateCustomer(customerId, customerDTO, authenticatedEmail);
         return ResponseEntity.status(HttpStatus.OK).body(updatedCustomer);
     }
 
     @DeleteMapping("/{customerId}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long customerId, HttpServletRequest request) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long customerId, String authenticatedEmail) {
         log.info("Deleting details of the customer with ID : {}", customerId);
-        customerService.deleteCustomer(customerId, request);
+        customerService.deleteCustomer(customerId, authenticatedEmail);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

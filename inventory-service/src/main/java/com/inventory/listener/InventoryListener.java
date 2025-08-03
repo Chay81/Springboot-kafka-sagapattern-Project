@@ -1,12 +1,15 @@
 package com.inventory.listener;
 
+import com.inventory.AppConstants;
 import com.inventory.DAO.Order;
 import com.inventory.DAO.OrderStatus;
 import com.inventory.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -27,8 +30,8 @@ public class InventoryListener {
 
         try {
             if ("fail-test".equalsIgnoreCase(order.getProductName())) {
-                log.warn("❌ Simulated failure for retry/DLQ test");
-                throw new RuntimeException("Simulated failure");
+                log.warn(AppConstants.DLQ);
+                throw new RuntimeException(AppConstants.DLQ);
             }
 
             // ✅ You must update this method to return boolean in InventoryServiceImpl
@@ -43,11 +46,11 @@ public class InventoryListener {
             if (stockUpdated) {
                 order.setStatus(OrderStatus.INVENTORY_UPDATED);
                 kafkaTemplate.send("order-response-topic", order);
-                log.info("✅ Inventory updated, sent status INVENTORY_UPDATED");
+                log.info(AppConstants.INVENTORY_UPDATED);
             } else {
                 order.setStatus(OrderStatus.ORDER_FAILED);
                 kafkaTemplate.send("order-compensation-topic", order);
-                log.warn("❌ Inventory update failed, sent status ORDER_FAILED to compensation topic");
+                log.warn(AppConstants.INVENTORY_FAILED);
             }
 
 
@@ -55,8 +58,18 @@ public class InventoryListener {
             // Send to compensation topic on exception
             order.setStatus(OrderStatus.ORDER_FAILED);
             kafkaTemplate.send("order-compensation-topic", order);
-            log.error("🔥 Exception while processing inventory, sent to compensation: {}", e.getMessage(), e);
+            log.error(AppConstants.INVENTORY_EXCEPTION, e.getMessage(), e);
             throw e; // allow retry/DLQ if configured
         }
     }
+
+//    @KafkaListener(
+//            topics = "inventory-topic",
+//            groupId = "inventory-group",
+//            containerFactory = "kafkaListenerContainerFactory"
+//    )
+//    public void consumeEventOrder(Order order, Acknowledgment ack, Consumer<?, ?> consumer) {
+//        log.info("Partitions assigned: {}", consumer.assignment());
+//    }
+
 }

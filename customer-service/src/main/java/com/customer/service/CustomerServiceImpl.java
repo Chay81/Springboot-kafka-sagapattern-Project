@@ -11,13 +11,12 @@ import com.customer.mapper.CustomerMapper;
 import com.customer.repository.AddressRepository;
 import com.customer.repository.CustomerRepository;
 import com.customer.util.DataMaskingUtil;
-import jakarta.servlet.http.HttpServletRequest;
+import com.customer.util.PasswordValidatorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,9 +47,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerDTO createCustomer(CustomerDTO customerDTO, boolean sameAddress) {
+
+        validatePasswordForCreation(customerDTO); // Added validation step for password validation
         Customer customer = customerMapper.toEntity(customerDTO);
 
-        // Encrypt password
+        // Encrypt password after validation
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
 
         if (sameAddress) {
@@ -72,12 +73,12 @@ public class CustomerServiceImpl implements CustomerService {
         log.info("Finding customer with ID: {}", customerId);
 
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.CUSTOMER_NOT_AVAILABLE+ customerId));
 
         // ❌ Non-admins can only view their own data
         if (!roles.contains("ROLE_ADMIN") &&
                 !customer.getEmailAddress().equalsIgnoreCase(authenticatedEmail)) {
-            throw new AccessDeniedException("You are not authorized to view this customer's data.");
+            throw new AccessDeniedException(AppConstants.VIEW_CUSTOMER);
         }
 
         hydrateAddresses(customer);
@@ -86,7 +87,6 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public List<CustomerDTO> getAllCustomers(String authenticatedEmail, Set<String> roles) {
-
         // ✅ Admins see all customers
         if (roles.contains("ROLE_ADMIN")) {
             List<Customer> customers = customerRepository.findAll();
@@ -99,31 +99,22 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         // ✅ Non-admins only get their own info
-        String actualEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("Actual customer email: {}", actualEmail);
-
-        // 🔓 Unmask only for internal DB matching
-        String unmaskedEmail = DataMaskingUtil.unmaskEmail(authenticatedEmail, actualEmail);
-        log.info("Unmasked customer email: {}", unmaskedEmail);
-        log.info("Unmasked customer email: {}", authenticatedEmail);
-
-        Customer customer = customerRepository.findByEmailAddress(unmaskedEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found for email: " + authenticatedEmail));
+        Customer customer = customerRepository.findByEmailAddress(authenticatedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.CUSTOMER_NOT_FOUND + authenticatedEmail));
 
         hydrateAddresses(customer);
         return List.of(maskSensitiveData(customerMapper.toDTO(customer)));
     }
 
     @Override
-    public CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, HttpServletRequest request) {
+    public CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, String authenticatedEmail) {
 
         Customer existing = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.CUSTOMER_NOT_AVAILABLE + customerId));
 
         // 🔒 Authorization check based on email
-        String emailFromHeader = request.getHeader("X-Authenticated-Email");
-        if (emailFromHeader == null || !emailFromHeader.equalsIgnoreCase(existing.getEmailAddress())) {
-            throw new AccessDeniedException("You are not authorized to modify another customer's data.");
+        if (authenticatedEmail == null || !authenticatedEmail.equalsIgnoreCase(existing.getEmailAddress())) {
+            throw new AccessDeniedException(AppConstants.MODIFY_CUSTOMER);
         }
 
         log.info("Updating customer with ID: {}", customerId);
@@ -188,14 +179,13 @@ public class CustomerServiceImpl implements CustomerService {
 
 
     @Override
-    public void deleteCustomer(Long customerId, HttpServletRequest request) {
+    public void deleteCustomer(Long customerId, String authenticatedEmail) {
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer not found with ID: " + customerId));
+                .orElseThrow(() -> new CustomerNotFoundException(AppConstants.CUSTOMER_NOT_AVAILABLE+ customerId));
 
         // 🔒 Authorization check
-        String emailFromHeader = request.getHeader("X-Authenticated-Email");
-        if (emailFromHeader == null || !emailFromHeader.equalsIgnoreCase(customer.getEmailAddress())) {
-            throw new AccessDeniedException("You are not authorized to delete another customer's account.");
+        if (authenticatedEmail == null || !authenticatedEmail.equalsIgnoreCase(customer.getEmailAddress())) {
+            throw new AccessDeniedException(AppConstants.DELETE_CUSTOMER);
         }
 
         customerRepository.delete(customer);
@@ -203,7 +193,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private void assignCustomerToAddress(Customer customer) {
 
-        log.info(" Assigning address with customer Id : {}", customer.getCustomerId());
+        log.info("Assigning address with customer Id : {}", customer.getCustomerId());
         customer.getBillingAddress().forEach(address -> {
             address.setCustomer(customer);
             address.setAddressType(AddressType.BILLING);
@@ -213,13 +203,13 @@ public class CustomerServiceImpl implements CustomerService {
             address.setCustomer(customer);
             address.setAddressType(AddressType.SHIPPING);
 
-            log.info(" Assigned address with customer Id : {}", customer.getCustomerId());
+            log.info("Assigned address with customer Id : {}", customer.getCustomerId());
         });
     }
 
     private List<Address> copyAddress(List<Address> original, AddressType type) {
 
-        log.info(" Copying address with customer Id ");
+        log.info("Copying address with customer Id ");
         List<Address> copied = new ArrayList<>();
         for (Address address : original) {
             Address clone = new Address();
@@ -251,24 +241,21 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private void handlePasswordUpdate(Customer existing, CustomerDTO dto) {
+
+        log.info("Entering handlePasswordUpdate method");
         if (dto.getNewPassword() == null || dto.getNewPassword().isBlank()) return;
 
-        String newPassword = dto.getNewPassword();
-        String retypePassword = dto.getRetypePassword();
+        PasswordValidatorUtil.validateNewAndRetypePasswords(dto.getNewPassword(), dto.getRetypePassword());
+        PasswordValidatorUtil.validateAndUpdatePassword(existing, dto.getNewPassword(), passwordEncoder);
 
-        if (!newPassword.equals(retypePassword)) {
-            throw new IllegalArgumentException(AppConstants.PASSWORD_MISMATCH);
-        }
+        log.info("End of handlePasswordUpdate method");
+    }
 
-        if (!newPassword.matches(AppConstants.ALPHANUMERIC_CHARACTERS)) {
-            throw new IllegalArgumentException(AppConstants.PASSWORD_FAIL_8_CHARACTERS);
-        }
+    private void validatePasswordForCreation(CustomerDTO dto) {
 
-        if (passwordEncoder.matches(newPassword, existing.getPassword())) {
-            throw new IllegalArgumentException(AppConstants.PASSWORD_OLD_MATCH);
-        }
-
-        existing.setPassword(passwordEncoder.encode(newPassword));
+        log.info("Entering validatePasswordForCreation method");
+        PasswordValidatorUtil.validateNewAndRetypePasswords(dto.getPassword(), dto.getRetypePassword());
+        log.info("End of validatePasswordForCreation method");
     }
 
     // ✅ Central masking utility

@@ -46,7 +46,7 @@ public class RefreshToken {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
-    @Column(nullable = false)
+    @Builder.Default
     private boolean expired = false;
 
     public RefreshToken(Long id, String token, String username, Set<String> roles,

@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(AppConstants.PUBLIC_PATHS).permitAll()
                         .requestMatchers("/actuator/prometheus").permitAll() // ✅ Allow Prometheus to scrape without auth
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")    // 🔒 Secure other actuator endpoints
+//                        .requestMatchers("/actuator/**").hasRole("ADMIN")    // 🔒 Secure other actuator endpoints
 //                        .anyRequest().hasRole("CUSTOMER")
                         .anyRequest().authenticated()
                 )

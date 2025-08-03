@@ -1,19 +1,20 @@
 package com.customer.security;
 
 import com.customer.DTO.ForgotPasswordRequestDTO;
-import com.customer.constants.AppConstants;
 import com.customer.entity.Customer;
 import com.customer.entity.PasswordResponse;
 import com.customer.repository.CustomerRepository;
+import com.customer.util.ForgotPasswordValidator;
+import com.customer.util.PasswordValidatorUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ForgotPasswordHandler {
 
     @Autowired
@@ -22,41 +23,27 @@ public class ForgotPasswordHandler {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ForgotPasswordValidator forgotPasswordValidator;
+
     public PasswordResponse resetPassword(ForgotPasswordRequestDTO requestDTO) {
-        Optional<Customer> optionalCustomer = Optional.empty();
 
-        // Validate matching newPassword and retypePassword
-        if (!requestDTO.getNewPassword().equals(requestDTO.getRetypePassword())) {
-            return new PasswordResponse(false, AppConstants.PASSWORD_MISMATCH);
+        log.info("Entering resetPassword method");
+        // Step 1: Validate identity and fetch customer
+        Customer customer = forgotPasswordValidator.validateAndFetchCustomer(requestDTO);
+
+        // Step 2: Validating password requirements
+        PasswordResponse response = PasswordValidatorUtil
+                .validateResetPassword(requestDTO, customer, passwordEncoder);
+
+        if (!response.isSuccess()) {
+            return response;
         }
 
-        // Validate password strength (at least 8 alphanumeric characters)
-        if (!requestDTO.getNewPassword().matches(AppConstants.ALPHANUMERIC_CHARACTERS)) {
-            return new PasswordResponse(false, AppConstants.PASSWORD_FAIL_8_CHARACTERS);
-        }
+        customerRepository.save(customer);
+        log.info("End of resetPassword method");
+        return response;
 
-        // Validate customer by phoneNumner or emailAddress
-        if (requestDTO.getEmail() != null && !requestDTO.getEmail().isEmpty()) {
-            optionalCustomer = customerRepository.findByEmailAddress(requestDTO.getEmail());
-        } else if (requestDTO.getPhoneNumber() != null && !requestDTO.getPhoneNumber().isEmpty()) {
-            optionalCustomer = customerRepository.findByPhoneNumber(requestDTO.getPhoneNumber());
-        }
-
-        if (optionalCustomer.isPresent()) {
-            Customer customer = optionalCustomer.get();
-
-            // Check if new password is same as old
-            if (passwordEncoder.matches(requestDTO.getNewPassword(), customer.getPassword())) {
-                return new PasswordResponse(false, AppConstants.PASSWORD_OLD_MATCH);
-            }
-
-            customer.setPassword(passwordEncoder.encode(requestDTO.getNewPassword()));
-            customerRepository.save(customer);
-
-            return new PasswordResponse(true, AppConstants.PASSWORD_SUCCESS);
-        }
-
-        return new PasswordResponse(false, AppConstants.CUSTOMER_NOT_FOUND);
     }
 }
 

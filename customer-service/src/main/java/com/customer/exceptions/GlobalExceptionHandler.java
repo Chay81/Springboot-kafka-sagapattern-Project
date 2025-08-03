@@ -1,6 +1,7 @@
 package com.customer.exceptions;
 
 
+import com.customer.constants.AppConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +30,13 @@ public class GlobalExceptionHandler {
         log.warn("❌ Customer not found: {}", ex.getMessage());
 
         Map<String, Object> errorBody = new HashMap<>();
-        errorBody.put("timestamp", Instant.now().toString());
-        errorBody.put("status", HttpStatus.NO_CONTENT.value());
-        errorBody.put("error", "No Content");
+//        errorBody.put("timestamp", Instant.now().toString());
+        errorBody.put("status", HttpStatus.NOT_FOUND.value());
+        errorBody.put("error", "Not Found");
         errorBody.put("message", ex.getMessage());
-        errorBody.put("path", request.getRequestURI());
+//        errorBody.put("path", request.getRequestURI());
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(errorBody);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody);
     }
 
     // 2. Handle validation errors from @Valid DTOs
@@ -92,11 +93,9 @@ public class GlobalExceptionHandler {
         log.warn("⛔ Access Denied: {}", ex.getMessage());
 
         Map<String, Object> errorBody = new LinkedHashMap<>();
-        errorBody.put("timestamp", Instant.now().toString());
         errorBody.put("status", HttpStatus.FORBIDDEN.value());
         errorBody.put("error", "Forbidden");
         errorBody.put("message", "You do not have permission to access this resource.");
-        errorBody.put("path", request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody);
     }
@@ -107,11 +106,8 @@ public class GlobalExceptionHandler {
         log.error("❌ Unexpected error: {}", ex.getMessage(), ex);
 
         Map<String, Object> errorBody = new HashMap<>();
-        errorBody.put("timestamp", Instant.now().toString());
         errorBody.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        errorBody.put("error", "Internal Server Error");
         errorBody.put("message", ex.getMessage());
-        errorBody.put("path", request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorBody);
     }
@@ -121,11 +117,9 @@ public class GlobalExceptionHandler {
             HttpStatus status, String error, String message, String path) {
 
         Map<String, Object> errorBody = new LinkedHashMap<>();
-        errorBody.put("timestamp", Instant.now().toString());
         errorBody.put("status", status.value());
         errorBody.put("error", error);
         errorBody.put("message", message);
-        errorBody.put("path", path);
 
         return ResponseEntity.status(status).body(errorBody);
     }
@@ -147,4 +141,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn(AppConstants.PHONE_NOT_FOUND);
+
+        Map<String, Object> errorBody = new HashMap<>();
+        errorBody.put("status", HttpStatus.BAD_REQUEST);
+        errorBody.put("message", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody);
+    }
 }

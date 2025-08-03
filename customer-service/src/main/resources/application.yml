@@ -104,8 +104,8 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.loadbalancer: DEBUG
     org.springframework.security: DEBUG
-    root: INFO
     com.order: DEBUG
+    org.springframework.http.convertor.json: DEBUG
 
 
   #     configuration for Prometheus

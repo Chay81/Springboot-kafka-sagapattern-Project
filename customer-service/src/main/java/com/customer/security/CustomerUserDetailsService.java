@@ -2,6 +2,7 @@ package com.customer.security;
 
 import com.customer.entity.Customer;
 import com.customer.repository.CustomerRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class CustomerUserDetailsService implements UserDetailsService {
 
     @Autowired
@@ -24,6 +26,7 @@ public class CustomerUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+
         Customer customer = customerRepository.findByEmailAddress(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Customer not found with email: " + email));
 
