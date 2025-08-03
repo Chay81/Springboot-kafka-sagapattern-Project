@@ -37,7 +37,7 @@ public class AddressDTO {
     private String state;
 
     @NotBlank(message = "Zip Code is mandatory")
-    @Pattern(regexp = "\\d{5,6}", message = "Zip Code must be 5 or 6 digits")
+    @Pattern(regexp = "^\\d{5,6}$", message = "Zip Code must be exactly 5 or 6 digits")
     private String zipCode;
 
     private AddressType addressType;  // Enum

@@ -7,10 +7,12 @@ spring:
 
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
 
       routes:
         - id: order-service
@@ -37,8 +39,12 @@ spring:
         wiretap: true
 
 jwt:
-  secret: mysecretkey1234567890mysecretkey1234567890
-  expiration: 1800000  # 30 minutes
+  secret: mysecretkey1234567890mysecretkey1234567890 # Key used to sign the token (HMAC-SHA256 key)
+  expiration: 1800000  # in milliseconds (30 minutes) Duration the token stays valid
+
+rsa:
+  public-key: classpath:public_key.pem
+  private-key: classpath:private_key.pem
 
 eureka:
   client:
@@ -63,6 +69,9 @@ management:
       enabled: true
     prometheus:
       enabled: true
+  info:
+    env:
+      enabled: true
 
   metrics:
     export:
@@ -77,6 +86,7 @@ info:
     version: 1.0.0
     description: Spring Cloud Gateway for microservices
 
+
 logging:
   level:
     org.springframework.boot.actuate.endpoint.web.servlet: DEBUG
@@ -88,3 +98,4 @@ logging:
     org.springframework.cloud.gateway: DEBUG
     org.springframework.kafka: INFO
     org.springframework.web: INFO
+    org.springframework.http.convertor.json: DEBUG

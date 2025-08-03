@@ -1,5 +1,6 @@
 package com.inventory.service;
 
+import com.inventory.AppConstants;
 import com.inventory.DTO.CreateInventoryRequestDTO;
 import com.inventory.entity.Inventory;
 import com.inventory.entity.InventoryResponse;
@@ -23,20 +24,20 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public boolean updateStock(String productName, int quantity, double price, String brandName, String modelNumber) {
-        log.info("Updating stock for product: {}, quantity: {}, price: {}", productName, quantity, price);
+        log.info(AppConstants.UPDATING_STOCK, productName, quantity, price);
 
         try {
             Optional<Inventory> optionalInventory = inventoryRepository.findByBrandNameAndModelNumber(brandName, modelNumber);
 
             if (optionalInventory.isEmpty()) {
-                log.warn("❌ Inventory not found for brand: {}, model: {}", brandName, modelNumber);
+                log.warn(AppConstants.INVENTORY_NOT_FOUND, brandName, modelNumber);
                 return false;
             }
 
             Inventory inventory = optionalInventory.get();
 
             if (inventory.getStock() < quantity) {
-                log.warn("❌ Insufficient stock for product: {}, available: {}, requested: {}",
+                log.warn(AppConstants.INSUFFICIENT_STOCK,
                         productName, inventory.getStock(), quantity);
                 return false;
             }
@@ -45,7 +46,7 @@ public class InventoryServiceImpl implements InventoryService {
             inventory.setPrice(price); // Update price if required
 
             inventoryRepository.save(inventory);
-            log.info("✅ Stock updated successfully for brand: {}, model: {}", brandName, modelNumber);
+            log.info(AppConstants.STOCK_UPDATED, brandName, modelNumber);
             return true;
 
         } catch (Exception e) {
@@ -56,7 +57,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public Optional<Inventory> getStock(String brandName, String modelNumber) {
-        log.info("Looking up inventory for brand: {} and model: {}", brandName, modelNumber);
+        log.info(AppConstants.GET_STOCK, brandName, modelNumber);
         return inventoryRepository.findByBrandNameAndModelNumber(brandName, modelNumber);
     }
 
@@ -64,7 +65,7 @@ public class InventoryServiceImpl implements InventoryService {
     public List<Inventory> getProducts(String productName) {
         List<Inventory> inventoryProducts = inventoryRepository.findByProductName(productName);
         if (inventoryProducts.isEmpty()) {
-            throw new ResourceNotFoundException("No inventory found for the product : " + productName);
+            throw new ResourceNotFoundException(AppConstants.NO_INVENTORY+ productName);
         }
         return inventoryProducts;
     }
@@ -72,7 +73,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public InventoryResponse createInventory(CreateInventoryRequestDTO requestDTO) {
 
-        log.info("Creating or updating inventory for brand: {}, model: {}", requestDTO.getBrandName(), requestDTO.getModelNumber());
+        log.info(AppConstants.CREATE_INVENTORY, requestDTO.getBrandName(), requestDTO.getModelNumber());
 
         Optional<Inventory> existingInventory = inventoryRepository
                 .findByBrandNameAndModelNumber(requestDTO.getBrandName(), requestDTO.getModelNumber());

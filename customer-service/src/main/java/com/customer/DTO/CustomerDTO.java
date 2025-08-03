@@ -47,10 +47,8 @@ public class CustomerDTO {
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 
-    @Valid
     private List<AddressDTO> billingAddress;
 
-    @Valid
     private List<AddressDTO> shippingAddress;
     private List<String> roles; // Optional: Will default to ROLE_CUSTOMER
 
@@ -60,9 +58,5 @@ public class CustomerDTO {
     @Size(min = 8, max = 100, message = "Retyped password must be between 8 and 100 characters")
     private String retypePassword;
 
-    public CustomerDTO(Customer customer) {
-        this.emailAddress = DataMaskingUtil.maskEmail(customer.getEmailAddress());
-        this.phoneNumber = DataMaskingUtil.maskPhone(customer.getPhoneNumber());
-    }
 }
 

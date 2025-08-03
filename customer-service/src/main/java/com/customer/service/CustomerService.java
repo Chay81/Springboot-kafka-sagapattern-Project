@@ -14,9 +14,9 @@ public interface CustomerService {
 
     List<CustomerDTO> getAllCustomers(String authenticatedEmail, Set<String> roles);
 
-    CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, HttpServletRequest request);
+    CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, String authenticatedEmail);
 
-    void deleteCustomer(Long customerId, HttpServletRequest request);
+    void deleteCustomer(Long customerId, String authenticatedEmail);
 
 // the changes for UpdateCustomer and delete customer with parameters, HttpServletRequest are due to below reasons
 // Prevent users from updating or deleting other customers’ data by ensuring that:

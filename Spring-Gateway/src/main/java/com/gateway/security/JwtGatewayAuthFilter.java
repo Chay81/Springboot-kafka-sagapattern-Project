@@ -9,7 +9,9 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -32,12 +34,16 @@ import java.util.Map;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
     @Value("${jwt.secret}")
     private String secretKey;
 
     private Key key;
+
+    @Autowired
+    private RSAEncryptor rsaEncryptor;
 
     @PostConstruct
     public void init() {
@@ -77,7 +83,11 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                     .getBody();
 
             log.info("Token valid. Granting access to {}", path);
-            String emailAddress = claims.get("emailAddress", String.class);
+
+            String encryptedEmail = claims.get("emailAddress", String.class);
+            String emailAddress = rsaEncryptor.decrypt(encryptedEmail);
+
+//            String emailAddress = claims.get("emailAddress", String.class);
             List<String> roles = claims.get("roles", List.class);
 
             // Inject email into request header for downstream services
@@ -140,8 +150,12 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
         // Validate that the customer can only update their own data by matching emailAddress with their token in JWT vs request body
         ObjectMapper objectMapper = new ObjectMapper();
 
-        if (path.startsWith("/customers") &&
-                (HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod) || HttpMethod.DELETE.equals(httpMethod))) {
+        if (path.startsWith("/customers") && !hasAllowedRole(roles,
+                "ROLE_CUSTOMER", "ROLE_USER", "ROLE_ADMIN", "ROLE_MANAGER") &&
+                (request.getMethod() == HttpMethod.PUT || request.getMethod() == HttpMethod.GET ||
+                request.getMethod() == HttpMethod.PATCH || request.getMethod() == HttpMethod.DELETE)) {
+
+            log.info("🔐 Checking authorization for PUT/PATCH/DELETE on /customers");
 
             ServerWebExchange finalExchange = exchange;
             return DataBufferUtils.join(exchange.getRequest().getBody())
@@ -152,6 +166,8 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
 
                         try {
                             String bodyString = new String(bodyBytes, StandardCharsets.UTF_8);
+                            log.info("📦 Request Body: {}", bodyString);
+
                             Map<String, Object> requestBodyMap = objectMapper.readValue(bodyString, Map.class);
 
                             String emailFromBody = (String) requestBodyMap.get("emailAddress");
@@ -168,6 +184,7 @@ public class JwtGatewayAuthFilter implements GlobalFilter, Ordered {
                             ServerHttpRequest mutatedRequest = finalExchange.getRequest().mutate()
                                     .header("X-Authenticated-Email", emailFromToken)
                                     .build();
+
 
                             DataBuffer newBody = finalExchange.getResponse().bufferFactory().wrap(bodyBytes);
                             ServerWebExchange mutatedExchange = finalExchange.mutate().request(mutatedRequest).build();
