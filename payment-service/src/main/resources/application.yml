@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8084
 
 spring:
   datasource:
@@ -8,21 +8,21 @@ spring:
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
   application:
-    name: customer-service
+    name: payment-service
 
   # route configuration
-#  cloud:
-#    gateway:
-#      discovery:
-#        locator:
-#          enabled: true
+  #  cloud:
+  #    gateway:
+  #      discovery:
+  #        locator:
+  #          enabled: true
   #          lower-case-service-id: true # this complete configuration is not needed as instance for this service is registered in spring gateway
 
 
   # JPA configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -39,13 +39,13 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     template:
-      default-topic: customers
+      default-topic: payments
     retry:
       max-attempts: 3
       backoff:
         interval: 2000 # 2 seconds, mentioned in milliseconds
     consumer:
-      group-id: customer-group
+      group-id: payment-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -88,12 +88,13 @@ management:
   info:
     env:
       enabled: true
+
 # actuator for info behaviour
 info:
   app:
     name: ${spring.application.name}
     version: 1.0.0
-    description: Customer Service for microservices
+    description: Payment Service for microservices
 
 # logging configuration
 logging:
@@ -103,9 +104,11 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.springframework.cloud.loadbalancer: DEBUG
-    org.springframework.security: DEBUG
-    com.customer: DEBUG
-    org.springframework.http.convertor.json: DEBUG
+    root: INFO
+    com.payment: DEBUG
+  #  this configuration is for JSON format logging in the console
+  #  pattern:
+  #        console: "{ \"timestamp\": \"%d{yyyy-MM-dd HH:mm:ss.SSS}\", \"level\": \"%p\", \"thread\": \"%t\", \"logger\": \"%c\", \"message\": \"%m\" }"
 
 
   #     configuration for Prometheus
@@ -125,7 +128,7 @@ logging:
   tags:
     application: ${spring.application.name}
     version: 1.0.0
-    description: Customer Service for microservices
+    description: Payment Service for microservices
 
   cloud:
     gateway:
@@ -137,22 +140,4 @@ logging:
         - name: RequestLogging
       httpclient:
         wiretap: true
-
-jwt:
-  secret: mysecretkey1234567890mysecretkey1234567890 # Key used to sign the token (HMAC-SHA256 key)
-  expiration: 1800000  # in milliseconds (30 minutes) Duration the token stays valid
-
-rsa:
-  public-key: classpath:public_key.pem
-  private-key: classpath:private_key.pem
-
-#  Oauth2 configuration
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          secret: my-super-secret-key-1234567890abcd1234567890abcd  # use a strong 32+ char key
-
-
-
 

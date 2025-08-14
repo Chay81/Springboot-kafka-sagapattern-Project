@@ -32,7 +32,7 @@ public class ForgotPasswordController {
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } else {
             log.warn("❌ Password reset failed: customer not found.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }

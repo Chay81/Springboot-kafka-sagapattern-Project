@@ -109,20 +109,20 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public CustomerDTO updateCustomer(Long customerId, CustomerDTO updatedCustomerDTO, String authenticatedEmail) {
 
-        Customer existing = customerRepository.findById(customerId)
+        Customer existingDetails = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException(AppConstants.CUSTOMER_NOT_AVAILABLE + customerId));
 
         // 🔒 Authorization check based on email
-        if (authenticatedEmail == null || !authenticatedEmail.equalsIgnoreCase(existing.getEmailAddress())) {
+        if (authenticatedEmail == null || !authenticatedEmail.equalsIgnoreCase(existingDetails.getEmailAddress())) {
             throw new AccessDeniedException(AppConstants.MODIFY_CUSTOMER);
         }
 
         log.info("Updating customer with ID: {}", customerId);
 
-        existing.setPhoneNumber(updatedCustomerDTO.getPhoneNumber());
-        existing.setEmailAddress(updatedCustomerDTO.getEmailAddress());
+        existingDetails.setPhoneNumber(updatedCustomerDTO.getPhoneNumber());
+        existingDetails.setEmailAddress(updatedCustomerDTO.getEmailAddress());
 
-        handlePasswordUpdate(existing, updatedCustomerDTO);
+        handlePasswordUpdate(existingDetails, updatedCustomerDTO);
 
         boolean sameAddress = updatedCustomerDTO.isSameAddress();
 
@@ -134,7 +134,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (sameAddress) {
             for (Address address : billingAddress) {
                 address.setAddressType(AddressType.BILLING);
-                address.setCustomer(existing);
+                address.setCustomer(existingDetails);
             }
 
             shippingAddress = billingAddress.stream().map(b -> {
@@ -146,14 +146,14 @@ public class CustomerServiceImpl implements CustomerService {
                 copy.setState(b.getState());
                 copy.setZipCode(b.getZipCode());
                 copy.setAddressType(AddressType.SHIPPING);
-                copy.setCustomer(existing);
+                copy.setCustomer(existingDetails);
                 return copy;
             }).collect(Collectors.toList());
 
         } else {
             for (Address address : billingAddress) {
                 address.setAddressType(AddressType.BILLING);
-                address.setCustomer(existing);
+                address.setCustomer(existingDetails);
             }
 
             shippingAddress = updatedCustomerDTO.getShippingAddress()
@@ -161,17 +161,17 @@ public class CustomerServiceImpl implements CustomerService {
 
             for (Address address : shippingAddress) {
                 address.setAddressType(AddressType.SHIPPING);
-                address.setCustomer(existing);
+                address.setCustomer(existingDetails);
             }
         }
 
-        existing.getBillingAddress().clear();
-        existing.getBillingAddress().addAll(billingAddress);
+        existingDetails.getBillingAddress().clear();
+        existingDetails.getBillingAddress().addAll(billingAddress);
 
-        existing.getShippingAddress().clear();
-        existing.getShippingAddress().addAll(shippingAddress);
+        existingDetails.getShippingAddress().clear();
+        existingDetails.getShippingAddress().addAll(shippingAddress);
 
-        Customer updated = customerRepository.save(existing);
+        Customer updated = customerRepository.save(existingDetails);
 
         return maskSensitiveData(customerMapper.toDTO(updated));
     }

@@ -40,7 +40,6 @@ public class ForgotPasswordHandler {
             return response;
         }
 
-        customerRepository.save(customer);
         log.info("End of resetPassword method");
         return response;
 
