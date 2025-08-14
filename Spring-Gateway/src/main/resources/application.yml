@@ -28,6 +28,11 @@ spring:
           predicates:
             - Path=/customers/**, /login, /customer/forgotPassword, /customer/logout, /refreshToken, /admin/tokens/expired
             - Method=GET,POST,PUT,PATCH
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/payments/**
+            - Method=GET,POST,PUT,PATCH
       default-filters:
         - name: RequestRateLimiter
           args:

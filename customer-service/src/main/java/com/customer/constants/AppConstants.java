@@ -42,7 +42,15 @@ public class AppConstants {
 
     public static final String PROVIDE_EMAIL_OR_PHONE = "Either email or phone number must be provided.";
 
+    public static final String PASSWORD_RECENTLY_USED = "You cannot reuse any of your last 7 passwords.";
+
+    public static final String PASSWORDS_TRIMMED = "🔐 Password updated for customerId={} and history trimmed to last 7.";
+
+    public static final String DELETED_PASSWORDS = "Deleted {} old password history entries for customerId={}.";
+
     public static final String PASSWORD_SUCCESS = "Password updated successfully.";
+
+    public static final String PASSWORD_VALIDATOR_UTIL_INITIALIZED = "PasswordValidatorUtil has not been initialized. Ensure PasswordValidatorInitializer is loaded.";
 
     public static final String HMACSHA256 = "HmacSHA256";
 
