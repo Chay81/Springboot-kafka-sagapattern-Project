@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class CompensationListener {
+public class    CompensationListener {
 
     private final OrderRepository orderRepository;
 

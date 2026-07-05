@@ -1,3 +1,11 @@
+docker compose up -d
+docker compose down -v
+docker compose pull
+docker compose up -d
+docker ps
+
+check for kafka and zookeeper versions and run docker compose 
+
 kafka is the container name
 
 run topic
@@ -12,6 +20,10 @@ verify topic exists
 docker exec -it kafka /bin/bash
 
 /usr/bin/kafka-topics --list --bootstrap-server localhost:9092
+
+Note: Run docker compose, then microservices and use the above 2 commands only to check if topics are created automatically. 
+
+If yes, then no need to manually create topics
 
 output
 --------
